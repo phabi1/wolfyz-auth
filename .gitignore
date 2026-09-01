@@ -1,0 +1,7 @@
+vendor
+node_modules
+cache/*
+hot
+dist
+config/parameters.*.php
+!config/parameters.example.php
