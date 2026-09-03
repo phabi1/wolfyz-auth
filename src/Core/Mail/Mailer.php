@@ -2,7 +2,7 @@
 
 namespace App\Core\Mail;
 
-class MailService
+class Mailer
 {
     public function sendMail(string $to, string $template, array $variables): bool
     {

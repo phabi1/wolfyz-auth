@@ -36,7 +36,7 @@ class PhpRenderer implements RendererInterface
 
     private function getTemplatePath($template)
     {
-        return APP_DIR . '/views/' . $template . '.html.php';
+        return APP_DIR . '/views/' . $template . '.php';
     }
 
     public function __call($method, $args)
