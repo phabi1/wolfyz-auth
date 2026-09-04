@@ -28,6 +28,18 @@ return [
             ],
         ],
     ],
+    'user-token' => [
+        'table' => 'auth_user_token',
+        'fields' => [
+            'id' => ['type' => Field::TYPE_INTEGER],
+            'token_type' => ['type' => Field::TYPE_STRING, 'required' => true],
+            'user_id' => ['type' => Field::TYPE_INTEGER, 'required' => true],
+            'token' => ['type' => Field::TYPE_STRING, 'required' => true, 'unique' => true],
+            'expires_at' => ['type' => Field::TYPE_DATETIME, 'nullable' => true],
+            'created_at' => ['type' => Field::TYPE_DATETIME, 'required' => true],
+            'updated_at' => ['type' => Field::TYPE_DATETIME, 'required' => true],
+        ],
+    ],
     'role' => [
         'table' => 'auth_role',
         'fields' => [
