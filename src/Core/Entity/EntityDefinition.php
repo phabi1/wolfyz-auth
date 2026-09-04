@@ -2,13 +2,17 @@
 
 namespace App\Core\Entity;
 
+use App\Core\Entity\Definition\Definition;
+
 class EntityDefinition
 {
     private $_definitions = [];
 
     public function register($name, $definition)
     {
-        $this->_definitions[$name] = $definition;
+        $definition['name'] = $name;
+        $this->_definitions[$name] = new Definition($definition);
+      
     }
 
     public function get($name)

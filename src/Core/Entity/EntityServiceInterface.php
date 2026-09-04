@@ -6,7 +6,7 @@ interface EntityServiceInterface
 {
     public function getDefinition();
     
-    public function items(array $filters = [], $page = 1, $size = 10, $sort = null, $order = 'asc', array $fields = []);
+    public function items(array $filters = [], $page = 1, $size = 10, $sort = null, $order = 'asc', array $fields = [], string $search = '');
 
     public function item($id, array $fields = []);
 

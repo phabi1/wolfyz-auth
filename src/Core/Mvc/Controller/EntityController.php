@@ -218,13 +218,15 @@ class EntityController extends ApiController
                 $data[$name] = $entity->$name;
             }
         }
-        if (isset($definition['relations'])) {
-            foreach ($definition['relations'] as $name => $relation) {
+        if ($definition->hasRelations()) {
+            foreach ($definition->getRelations() as $relation) {
+                $name = $relation->getName();
                 if (isset($entity->{$name})) {
                     $data[$name] = $entity->{$name};
                 }
             }
         }
+
         return $data;
     }
 

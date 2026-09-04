@@ -2,7 +2,7 @@
 
 namespace App\Core\Entity\Definition;
 
-class Field
+class Field implements \ArrayAccess
 {
     const TYPE_STRING = 'string';
     const TYPE_INTEGER = 'integer';
@@ -51,5 +51,46 @@ class Field
     public function getOptions()
     {
         return $this->options;
+    }
+
+    public function offsetExists(mixed $offset): bool
+    {
+        if (property_exists($this, $offset)) {
+            return true;
+        }
+        return isset($this->options[$offset]);
+    }
+
+    public function offsetGet(mixed $offset): mixed
+    {
+        if (property_exists($this, $offset)) {
+            return $this->$offset;
+        }
+        return $this->options[$offset] ?? null;
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        if (property_exists($this, $offset)) {
+            $this->$offset = $value;
+            return;
+        }
+
+        $this->options[$offset] = $value;
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        if (isset($this->options[$offset])) {
+            unset($this->options[$offset]);
+        }
+    }
+
+    public static function factory($name, $data)
+    {
+        $type = $data['type'] ?? null;
+        unset($data['type']);
+        $options = $data;
+        return new self($name, $type, $options);
     }
 }
