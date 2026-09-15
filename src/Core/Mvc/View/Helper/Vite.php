@@ -21,7 +21,7 @@ class Vite
         }
 
         // En production : lire le manifest généré par Vite
-        $manifestPath = APP_DIR . '/public/dist/manifest.json';
+        $manifestPath = APP_DIR . '/public/dist/.vite/manifest.json';
         if (!file_exists($manifestPath)) {
             return '';
         }
