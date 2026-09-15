@@ -16,28 +16,33 @@ class SignController extends AbstractController
             'password' => ''
         ];
 
+        $error = null;
+
         if ($request->isMethod('POST')) {
 
             $fields['identity'] = $request->request->get('identity', '');
             $fields['password'] = $request->request->get('password', '');
 
             $useCaseBus = $this->getService('use-case-bus');
-            $useCaseBus->execute('auth.sign-in', $fields);
+            $result = $useCaseBus->execute('auth.sign-in', $fields);
 
-            $session = $this->getService('session');
-            if ($session->has('oauth2_redirect_uri')) {
-                $url = $session->get('oauth2_redirect_uri', '/');
-                $session->remove('oauth2_redirect_uri');
-                return new RedirectResponse($url);
+            if ($result) {
+                $session = $this->getService('session');
+                if ($session->has('oauth2_redirect_uri')) {
+                    $url = $session->get('oauth2_redirect_uri', '/');
+                    $session->remove('oauth2_redirect_uri');
+                    return new RedirectResponse($url);
+                } else {
+                    return $this->redirectToRoute('index');
+                }
             } else {
-                return $this->redirectToRoute('index');
+                $error = 'invalid_identity_or_password';
             }
         }
 
         $signupUrl = $this->getService('router-generator')->generate('signup');
 
-        $data = array_merge($fields, ['signup_url' => $signupUrl]);
-        return $this->render('auth/signin', $data);
+        return $this->render('auth/signin', ['error' => $error, 'fields' => $fields]);
     }
 
     public function signupAction(Request $request)

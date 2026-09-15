@@ -1,9 +1,8 @@
 <?php
 
-namespace App\OAuth2\Repository;
+namespace App\OAuth2\Server\Repository;
 
 use App\Core\Entity\EntityManager;
-use App\OAuth2\Repository\ScopeRepository;
 
 class ScopeRepositoryFactory
 {

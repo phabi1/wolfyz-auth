@@ -13,7 +13,7 @@ class RoutesFactory
         foreach ($routes as $name => $info) {
             $collection->add($name, new Route(
                 $info['path'],
-                $info['controller'],
+                array_merge(['_controller' => $info['controller']], $info['defaults'] ?? []),
                 $info['requirements'] ?? [],
                 $info['options'] ?? [],
                 $info['host'] ?? '',

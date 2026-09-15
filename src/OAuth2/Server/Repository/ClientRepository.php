@@ -1,9 +1,9 @@
 <?php
 
-namespace App\OAuth2\Repository;
+namespace App\OAuth2\Server\Repository;
 
 use App\Core\Entity\EntityRepositoryInterface;
-use App\OAuth2\Entity\ClientEntity;
+use App\OAuth2\Server\Entity\ClientEntity;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\ClientRepositoryInterface;
 

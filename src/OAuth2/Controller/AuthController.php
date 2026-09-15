@@ -3,7 +3,8 @@
 namespace App\OAuth2\Controller;
 
 use App\Core\Mvc\Controller\ApiController;
-use App\OAuth2\Entity\UserEntity;
+use App\OAuth2\Entity\Repository\AccessTokenRepositoryInterface;
+use App\OAuth2\Server\Entity\UserEntity;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,14 +21,6 @@ class AuthController extends ApiController
         $server = $this->getService('oauth2.server');
 
         try {
-
-            foreach ($request->attributes->all() as $key => $value) {
-                if (!is_string($key)) {
-                    $request->attributes->remove($key);
-                    $request->attributes->set((string) 'a' . $key, $value);
-                }
-            }
-
             $nyholmFactory = new NyholmFactory();
 
             $psrHttpFactory = new PsrHttpFactory(
@@ -103,7 +96,7 @@ class AuthController extends ApiController
             $response = $this->withCors($response, $request);
             return $response;
         } catch (\Throwable $exception) {
-            var_dump($exception->getMessage());
+            $this->getService('watchdog')->error($exception->getMessage(), ['exception' => $exception->getTraceAsString()]);
             $response = new JsonResponse([
                 'error' => 'server_error',
                 'message' => 'Une erreur interne est survenue sur le serveur d\'autorisation.',
@@ -112,6 +105,98 @@ class AuthController extends ApiController
             $response = $this->withCors($response, $request);
             return $response;
         }
+    }
+
+    public function userinfoAction(Request $request)
+    {
+        // $authorizationHeader = $request->headers->get('authorization');
+
+        // $token = null;
+        // if ($authorizationHeader && preg_match('/Bearer\s(\S+)/', $authorizationHeader, $matches)) {
+        //     $token = $matches[1];
+        // }
+
+        // if (!$token) {
+        //     $response = new JsonResponse([
+        //         'error' => 'invalid_request',
+        //         'message' => 'Le jeton d\'accès est manquant.'
+        //     ], 400);
+        //     $response = $this->withCors($response, $request);
+        //     return $response;
+        // }
+
+        $entityManager = $this->getService('entity-manager');
+
+        // /**
+        //  * @var AccessTokenRepositoryInterface
+        //  */
+        // $accessTokenRepository = $entityManager->getRepository('oauth2.access_token');
+
+        // $accessToken = $accessTokenRepository->findByToken($token);
+        // if (!$accessToken) {
+        //     $response = new JsonResponse([
+        //         'error' => 'invalid_token',
+        //         'message' => 'Le jeton d\'accès est invalide.'
+        //     ], 401);
+        //     $response = $this->withCors($response, $request);
+        //     return $response;
+        // }
+
+        $userRepository = $entityManager->getRepository('user');
+        // if ($accessToken->user_id === null) {
+        //     $response = new JsonResponse([
+        //         'error' => 'invalid_token',
+        //         'message' => 'Le jeton d\'accès ne contient pas d\'identifiant utilisateur.'
+        //     ], 401);
+        //     $response = $this->withCors($response, $request);
+        //     return $response;
+        // }
+    
+        $user = $userRepository->findById(1);
+
+        if (!$user) {
+            $response = new JsonResponse([
+                'error' => 'invalid_token',
+                'message' => 'L\'utilisateur associé au jeton d\'accès est introuvable.'
+            ], 401);
+            $response = $this->withCors($response, $request);
+            return $response;
+        }
+
+        $response = new JsonResponse([
+            'user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'firstname' => $user->firstname,
+                'lastname' => $user->lastname,
+            ]
+        ]);
+        $response = $this->withCors($response, $request);
+
+        return $response;
+    }
+
+    public function jwksAction(Request $request)
+    {
+        $publicKey = openssl_pkey_get_public(file_get_contents( APP_DIR . '/certs/oauth2-public.key'));
+        $details = openssl_pkey_get_details($publicKey);
+        $jwks = [
+            'keys' => [
+                [
+                    'kty' => 'RSA',
+                    'kid' => '1',
+                    'use' => 'sig',
+                    'alg' => 'RS256',
+                    'n' => rtrim(strtr(base64_encode($details['rsa']['n']), '+/', '-_'), '='),
+                    'e' => rtrim(strtr(base64_encode($details['rsa']['e']), '+/', '-_'), '=')
+                ]
+            ]
+        ];
+
+        $response = new JsonResponse($jwks);
+        $response = $this->withCors($response, $request);
+
+        return $response;
     }
 
     public function introspectAction(Request $request)
@@ -124,6 +209,7 @@ class AuthController extends ApiController
             'token_endpoint' => $issuer . '/oauth2/token',
             'session_endpoint' => $issuer . '/oauth2/session',
             'userinfo_endpoint' => $issuer . '/oauth2/userinfo',
+            'jwks_uri' => $issuer . '/oauth2/jwks'
         ];
 
         $response = new JsonResponse($payload);

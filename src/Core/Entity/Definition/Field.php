@@ -7,6 +7,8 @@ class Field implements \ArrayAccess
     const TYPE_STRING = 'string';
     const TYPE_INTEGER = 'integer';
     const TYPE_BOOLEAN = 'boolean';
+    const TYPE_EMAIL = 'email';
+    const TYPE_PHONE = 'phone';
     const TYPE_ARRAY = 'array';
     const TYPE_JSON = 'json';
     const TYPE_DATETIME = 'datetime';
@@ -21,7 +23,9 @@ class Field implements \ArrayAccess
         self::TYPE_JSON,
         self::TYPE_DATETIME,
         self::TYPE_DATE,
-        self::TYPE_TIME
+        self::TYPE_TIME,
+        self::TYPE_EMAIL,
+        self::TYPE_PHONE,
     ];
 
     protected $name;
@@ -46,6 +50,26 @@ class Field implements \ArrayAccess
     public function getType()
     {
         return $this->type;
+    }
+
+    public function isReadonly()
+    {
+        return isset($this->options['readonly']) ? (bool)$this->options['readonly'] : false;
+    }
+
+    public function isRequired()
+    {
+        return isset($this->options['required']) ? (bool)$this->options['required'] : false;
+    }
+
+    public function isHidden()
+    {
+        return isset($this->options['hidden']) ? (bool)$this->options['hidden'] : false;
+    }
+
+    public function isNullable()
+    {
+        return isset($this->options['nullable']) ? (bool)$this->options['nullable'] : false;
     }
 
     public function getOptions()

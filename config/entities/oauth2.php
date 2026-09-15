@@ -49,6 +49,7 @@ return [
         ]
     ],
     'oauth2.access_token' => [
+        'repository' => App\OAuth2\Entity\Repository\AccessTokenRepository::class,
         'table' => 'auth_oauth2_access_token',
         'fields' => [
             'id' => [

@@ -1,10 +1,9 @@
 <?php
 
-namespace App\OAuth2\Repository;
-
-use App\Core\Db\Db;
+namespace App\OAuth2\Server\Repository;
+    
 use App\Core\Entity\EntityRepositoryInterface;
-use App\OAuth2\Entity\AuthCodeEntity;
+use App\OAuth2\Server\Entity\AuthCodeEntity;
 use League\OAuth2\Server\Entities\AuthCodeEntityInterface;
 use League\OAuth2\Server\Repositories\AuthCodeRepositoryInterface;
 
@@ -35,7 +34,7 @@ class AuthCodeRepository implements AuthCodeRepositoryInterface
 
     public function revokeAuthCode($codeId): void
     {
-        // $this->repository->deleteBy(['code' => ['eq' => $codeId]]);
+        $this->repository->deleteBy(['code' => ['eq' => $codeId]]);
     }
 
     public function isAuthCodeRevoked($codeId): bool

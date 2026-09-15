@@ -1,8 +1,7 @@
 <?php
 
-namespace App\OAuth2\Factory;
+namespace App\OAuth2\Server\Factory;
 
-use \Defuse\Crypto\Key;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\Grant\AuthCodeGrant;
 use League\OAuth2\Server\Grant\ClientCredentialsGrant;
@@ -15,8 +14,6 @@ use League\OAuth2\Server\Repositories\AuthCodeRepositoryInterface;
 
 class OAuth2ServerFactory
 {
-
-
     public static function create(
         ClientRepositoryInterface $clientRepository,
         ScopeRepositoryInterface $scopeRepository,

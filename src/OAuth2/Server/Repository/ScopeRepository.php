@@ -1,9 +1,9 @@
 <?php
 
-namespace App\OAuth2\Repository;
+namespace App\OAuth2\Server\Repository;
 
 use App\Core\Entity\EntityRepositoryInterface;
-use App\OAuth2\Entity\ScopeEntity;
+use App\OAuth2\Server\Entity\ScopeEntity;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\ScopeEntityInterface;
 use League\OAuth2\Server\Repositories\ScopeRepositoryInterface;
@@ -21,7 +21,8 @@ class ScopeRepository implements ScopeRepositoryInterface
     private array $definedScopes = [
         'openid' => 'Permission d\'accès à l\'identifiant OpenID',
         'profile' => 'Permission d\'accès au profil',
-        'email' => 'Permission d\'accès à l\'email'
+        'email' => 'Permission d\'accès à l\'email',
+        'api' => 'Permission d\'accès à l\'API'
     ];
 
     public function getScopeEntityByIdentifier($scopeIdentifier): ?ScopeEntityInterface

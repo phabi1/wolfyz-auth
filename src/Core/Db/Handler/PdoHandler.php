@@ -2,8 +2,9 @@
 
 namespace App\Core\Db\Handler;
 
-class PdoHandler {
-    
+class PdoHandler
+{
+
     private $_pdo;
     private $_lastQuery;
 
@@ -17,8 +18,14 @@ class PdoHandler {
         }
     }
 
-    public function escape($value) {
-        return '"' . $value . '"';
+    public function escape($value)
+    {
+        if (is_int($value) || is_float($value)) {
+            return $value;
+        } else if (is_bool($value)) {
+            return $value ? 1 : 0;
+        }
+        return '"' . addcslashes($value, "\0\n\r\\\"'\x1a") . '"';
     }
 
     public function fetchAll($sql)
@@ -48,7 +55,8 @@ class PdoHandler {
         return $this->_pdo->exec($sql);
     }
 
-    public function insertId() {
+    public function insertId()
+    {
         return $this->_pdo->lastInsertId();
     }
 

@@ -1,14 +1,12 @@
 <?php
 
-namespace App\OAuth2\Repository;
+namespace App\OAuth2\Server\Repository;
 
-use App\Core\Db\Db;
-use App\OAuth2\Entity\AccessTokenEntity;
-use App\OAuth2\Entity\ClientEntity;
+use App\Core\Entity\EntityRepositoryInterface;
+use App\OAuth2\Server\Entity\AccessTokenEntity;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
-use App\Core\Entity\EntityRepositoryInterface;
 
 class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
@@ -25,8 +23,16 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         array $scopes,
         $userIdentifier = null
     ): AccessTokenEntityInterface {
-        /** @var ClientEntity $clientEntity */
-        return new AccessTokenEntity($clientEntity, $scopes, $userIdentifier);
+        $accessToken = new AccessTokenEntity();
+        $accessToken->setClient($clientEntity);
+        foreach ($scopes as $scope) {
+            $accessToken->addScope($scope);
+        }
+        if ($userIdentifier !== null) {
+            $accessToken->setUserIdentifier($userIdentifier);
+        }
+
+        return $accessToken;
     }
 
     public function persistNewAccessToken(AccessTokenEntityInterface $accessTokenEntity): void

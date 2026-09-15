@@ -2,7 +2,7 @@
 
 return [
     'oauth2.server' => [
-        'factory' => [\App\OAuth2\Factory\OAuth2ServerFactory::class, 'create'],
+        'factory' => [\App\OAuth2\Server\Factory\OAuth2ServerFactory::class, 'create'],
         'arguments' => [
             '@oauth2.client_repository',
             '@oauth2.scope_repository',
@@ -15,23 +15,23 @@ return [
         ]
     ],
     'oauth2.scope_repository' => [
-        'factory' => [\App\OAuth2\Repository\ScopeRepositoryFactory::class, 'create'],
+        'factory' => [\App\OAuth2\Server\Repository\ScopeRepositoryFactory::class, 'create'],
            'arguments' => ['@entity-manager']
     ],
     'oauth2.access_token_repository' => [
-        'factory' => [\App\OAuth2\Repository\AccessTokenRepositoryFactory::class, 'create'],
+        'factory' => [\App\OAuth2\Server\Repository\AccessTokenRepositoryFactory::class, 'create'],
         'arguments' => ['@entity-manager']
     ],
     'oauth2.client_repository' => [
-        'factory' => [\App\OAuth2\Repository\ClientRepositoryFactory::class, 'create'],
+        'factory' => [\App\OAuth2\Server\Repository\ClientRepositoryFactory::class, 'create'],
         'arguments' => ['@entity-manager']
     ],
     'oauth2.refresh_token_repository' => [
-        'factory' => [\App\OAuth2\Repository\RefreshTokenRepositoryFactory::class, 'create'],
+        'factory' => [\App\OAuth2\Server\Repository\RefreshTokenRepositoryFactory::class, 'create'],
         'arguments' => ['@entity-manager']
     ],
     'oauth2.auth_code_repository' => [
-        'factory' => [\App\OAuth2\Repository\AuthCodeRepositoryFactory::class, 'create'],
+        'factory' => [\App\OAuth2\Server\Repository\AuthCodeRepositoryFactory::class, 'create'],
         'arguments' => ['@entity-manager']
     ],
 ];

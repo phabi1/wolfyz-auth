@@ -7,14 +7,17 @@ $signUpBtn = '<a href="<?php echo $signup_url ?>" class="font-semibold text-indi
       class="mx-auto h-10 w-auto" />
     <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">Sign in to your account</h2>
   </div>
-
   <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+    <?php if ($error) { ?>
+      <p class="text-center text-red-500 text-sm/6"><?php echo $this->translate('Invalid identity or password.'); ?></p>
+    <?php } ?>
     <form action="#" method="POST" class="space-y-6">
       <div>
         <label for="identity" class="block text-sm/6 font-medium text-gray-100">Email address</label>
         <div class="mt-2">
           <input id="identity" type="email" name="identity" required autocomplete="email"
-            class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
+            value="<?php echo $fields['identity']; ?>"
+            class="block w-full rounded-md bg-white/5 px-3 p;y-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
         </div>
       </div>
 
@@ -27,6 +30,7 @@ $signUpBtn = '<a href="<?php echo $signup_url ?>" class="font-semibold text-indi
         </div>
         <div class="mt-2">
           <input id="password" type="password" name="password" required autocomplete="current-password"
+            value="<?php echo $fields['password']; ?>"
             class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
         </div>
       </div>

@@ -2,15 +2,12 @@
 
 namespace App;
 
+use App\Core\Db\Exception\DbException;
 use App\Core\Di;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Matcher\UrlMatcher;
-use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
-use Symfony\Component\Routing\RouteCollection;
-use Symfony\Component\Routing\Route;
 
 class Application
 {
@@ -24,6 +21,15 @@ class Application
         $this->setupConfig();
 
         $request = Request::createFromGlobals();
+        
+        $referer = $request->headers->get('Origin');
+
+        if ($request->getMethod() === 'OPTIONS') {
+            $response = new JsonResponse(null, 204);
+            $this->withCors($response, $referer);
+            $response->send();
+            return;
+        }
 
         $router = $this->container->get('router-matcher');
         $routerContext = $this->container->get('router-context');
@@ -43,19 +49,32 @@ class Application
             return;
         }
 
-        $controller = $routeParameters[0];
-        $action = $routeParameters[1];
+        $controller = $routeParameters['_controller'][0];
+        $action = $routeParameters['_controller'][1];
 
         $controllerInstance = new $controller();
 
-        $controllerInstance->setContainer($this->container);
-        $response = $controllerInstance->dispatch($action, $request);
-
-        if ($response instanceof Response) {
-            $response->send();
+        try {
+            $controllerInstance->setContainer($this->container);
+            $response = $controllerInstance->dispatch($action, $request);
+        } catch (\Exception $e) {
+            $this->container->get('watchdog')->error($e->getMessage());
+            $response = new JsonResponse('An error occurred', 500);
+            }
+            
+            if ($response instanceof Response) {
+                $this->withCors($response, $referer);
+                $response->send();
         }
 
         return;
+    }
+
+    private function withCors(Response $response, $referer = '*')
+    {
+        $response->headers->set('Access-Control-Allow-Origin', $referer);
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     }
 
     private function setupDependencyInjection()

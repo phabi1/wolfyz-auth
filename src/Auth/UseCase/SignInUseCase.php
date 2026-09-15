@@ -28,13 +28,13 @@ class SignInUseCase implements UseCaseInterface
         $password = $params['password'] ?? null;
 
         if (!$email || !$password) {
-            throw new \InvalidArgumentException('Identity and password are required.');
+            return null;
         }
 
         $user = $this->userRepository->findByEmail($email);
 
         if (!$user || !$this->passwordEncoder->verify($password, $user->password)) {
-            throw new \RuntimeException('Invalid email or password.');
+            return null;
         }
 
         $this->authenticator->login($user, 'local');

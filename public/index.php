@@ -7,4 +7,6 @@ define('APP_ENV', getenv('APP_ENV') ?: 'production');
 define('CONFIG_DIR', APP_DIR . '/config');
 define('CACHE_DIR', APP_DIR . '/cache');
 
+date_default_timezone_set('Europe/Paris');
+
 \App\Application::run();

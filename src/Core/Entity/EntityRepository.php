@@ -2,20 +2,28 @@
 
 namespace App\Core\Entity;
 
+use App\Core\Db\Db;
+use App\Core\Db\Exception\DuplicateEntryException;
+use App\Core\Entity\Definition\Definition;
 use App\Core\Entity\Definition\Field;
+use App\Core\Entity\Exception\DuplicateEntityException;
 
 class EntityRepository implements EntityRepositoryInterface
 {
-    protected $db;
-    protected $definition;
+    protected Db $db;
+    protected Definition $definition;
 
-    public function __construct($db, $definition)
+    public function setDb(Db $db)
     {
         $this->db = $db;
+    }
+
+    public function setDefinition(Definition $definition)
+    {
         $this->definition = $definition;
     }
 
-    public function getDefinition()
+    public function getDefinition(): Definition
     {
         return $this->definition; // Implementation for fetching the entity definition
     }
@@ -85,6 +93,12 @@ class EntityRepository implements EntityRepositoryInterface
     {
         $data = $this->serialize($obj);
 
+        foreach ($this->definition->getFields() as $field) {
+            if ($field->isNullable() && !isset($data[$field->getName()])) {
+                $data[$field->getName()] = null;
+            }
+        }
+
         if (isset($this->definition['fields']['created_at']) && !isset($data['created_at'])) {
             $data['created_at'] = date('Y-m-d H:i:s');
         }
@@ -94,7 +108,12 @@ class EntityRepository implements EntityRepositoryInterface
             $data['updated_at'] = date('Y-m-d H:i:s');
         }
 
-        $id = $this->db->insert($this->definition['table'], $data); // Implementation for creating a new item based on the definition and provided data
+        try {
+            $id = $this->db->insert($this->definition['table'], $data); // Implementation for creating a new item based on the definition and provided data
+        } catch (DuplicateEntryException $e) {
+            throw new DuplicateEntityException($this->getDefinition()->getName());
+        }
+
         return $this->findById($id);
     }
 
@@ -106,20 +125,20 @@ class EntityRepository implements EntityRepositoryInterface
             $data['updated_at'] = date('Y-m-d H:i:s');
         }
 
-        $this->db->update($this->definition['table'], $data, ['id' => $id]); // Implementation for updating an existing item identified by ID with the provided data
+        $this->db->update($this->definition['table'], $data, $this->db->expr()->eq('id', $id)); // Implementation for updating an existing item identified by ID with the provided data
         return $this->findById($id);
     }
 
     public function delete($id)
     {
-        $this->db->delete($this->definition['table'], ['id' => $id]); // Implementation for deleting an item identified by ID
+        $this->db->delete($this->definition['table'], $this->db->expr()->eq('id', $id)); // Implementation for deleting an item identified by ID
     }
 
     public function deleteBy($filters = [])
     {
         $result = $this->find($filters);
         foreach ($result as $item) {
-            $this->db->delete($this->definition['table'], $item->id);
+            $this->db->delete($this->definition['table'], $this->db->expr()->eq('id', $item->id));
         }
     }
 
@@ -130,7 +149,7 @@ class EntityRepository implements EntityRepositoryInterface
             foreach ($this->definition['fields'] as $field => $fieldDef) {
                 if (isset($obj[$field])) {
                     $value = $obj[$field];
-                    if ($fieldDef['type'] === Field::TYPE_ARRAY && $value) {
+                    if ($fieldDef['type'] === Field::TYPE_ARRAY) {
                         $value = implode(',', $value);
                     } else if ($fieldDef['type'] === Field::TYPE_JSON) {
                         $value = json_encode($value);

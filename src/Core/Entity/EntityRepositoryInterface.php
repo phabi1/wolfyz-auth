@@ -2,9 +2,14 @@
 
 namespace App\Core\Entity;
 
+use App\Core\Db\Db;
+use App\Core\Entity\Definition\Definition;
+
 interface EntityRepositoryInterface
 {
-    public function getDefinition();
+    public function setDb(Db $db);
+    public function setDefinition(Definition $definition);
+    public function getDefinition(): Definition;
 
     public function findById($id): \stdClass|null;
 

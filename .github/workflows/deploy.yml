@@ -1,0 +1,54 @@
+name: Deploy FTP and Update
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  web-deploy:
+    name: Web Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configuration de la clé SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Ajouter HOST aux hôtes connus (Known Hosts)
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.SSH_SERVER }} >> ~/.ssh/known_hosts
+
+      - name: Configure PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+          cache: composer
+
+      - name: Install Dependencies
+        run: |
+          composer install --no-dev --optimize-autoloader --prefer-dist
+
+      - name: Synchronization Files
+        env:
+          SSH_SERVER: ${{ secrets.SSH_SERVER }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
+          DOMAIN_URL: ${{ secrets.DOMAIN_URL }}
+        run: |
+          rsync -avz --checksum --no-perms --no-owner --no-group --delete \
+            --exclude='.git*' \
+            --exclude='.htaccess' \
+            --exclude='parameters.*.php' \
+            --exclude='cache' \
+            --exclude='files' \
+            ./ $SSH_USER@$SSH_SERVER:$FTP_SERVER_DIR/
+        
+      - name: Run Update Script To Server
+        run: |
+          curl -s "${{ secrets.DOMAIN_URL }}/update.php?secret=${{ secrets.DEPLOY_SECRET }}"

@@ -13,7 +13,21 @@ class Locator implements ContainerAwareInterface
         $this->_tag = $tag;
     }
 
-    public function get($key)
+    public function has(string $key): bool
+    {
+        $definitionIds = $this->container->findByTag($this->_tag);
+        foreach ($definitionIds as $serviceName) {
+            $def = $this->container->getDefinition($serviceName);
+            foreach ($def['tags'] as $tag) {
+                if ($tag['name'] === $this->_tag && $tag['value'] === $key) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public function get(string $key): mixed
     {
         $definitionIds = $this->container->findByTag($this->_tag);
         foreach ($definitionIds as $serviceName) {

@@ -1,10 +1,9 @@
 <?php
 
-namespace App\OAuth2\Repository;
+namespace App\OAuth2\Server\Repository;
 
-use App\Core\Db\Db;
 use App\Core\Entity\EntityRepositoryInterface;
-use App\OAuth2\Entity\RefreshTokenEntity;
+use App\OAuth2\Server\Entity\RefreshTokenEntity;
 use League\OAuth2\Server\Entities\RefreshTokenEntityInterface;
 use League\OAuth2\Server\Repositories\RefreshTokenRepositoryInterface;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\OAuth2\Entity;
+namespace App\OAuth2\Server\Entity;
 
 use League\OAuth2\Server\Entities\AuthCodeEntityInterface;
 use League\OAuth2\Server\Entities\Traits\AuthCodeTrait;

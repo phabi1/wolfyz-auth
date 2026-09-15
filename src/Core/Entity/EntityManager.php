@@ -3,22 +3,37 @@
 namespace App\Core\Entity;
 
 use App\Core\Db\Db;
+use App\Core\Di\ContainerAwareInterface;
 
-class EntityManager {
+class EntityManager implements ContainerAwareInterface {
+
+    private $container;
 
     private $entityDefinition;
+
     private $db;
 
     private $repositories = [];
+    
+    private EntityRepositoryLocator $locator;
 
     public function __construct(
         EntityDefinition $entityDefinition,
-        Db $db
+        Db $db,
+        EntityRepositoryLocator $locator
     ) {
         $this->entityDefinition = $entityDefinition;
         $this->db = $db;
+        $this->locator = $locator;
     }
 
+    public function setContainer($container) {
+        $this->container = $container;
+    }
+
+    public function getEntityDefinition() {
+        return $this->entityDefinition;
+    }
     public function getDb()
     {
         return $this->db;
@@ -33,11 +48,12 @@ class EntityManager {
         if (!$definition) {
             throw new \Exception("Entity $entityName not found.");
         }
-        $class = $definition['repository'] ?? null;
-        if (!$class) {
-            $repository = new EntityRepository($this->db, $definition);
-            return $this->repositories[$entityName] = $repository;
-        }
-        return $this->repositories[$entityName] = new $class($this->db, $definition);
+        $id = $definition->getRepository() ?? null;
+        $repository = $this->locator->get($id);
+        $repository->setDefinition($definition);
+        $repository->setDb($this->db);
+        $this->repositories[$entityName] = $repository;
+        return $repository;
+        
     }
 }
