@@ -4,6 +4,9 @@ namespace App\Core\Mvc\View\Helper;
 
 class Vite
 {
+
+    private $manifest;
+
     public function __invoke($args)
     {
         return $this->asset($args);
@@ -21,14 +24,10 @@ class Vite
         }
 
         // En production : lire le manifest généré par Vite
-        $manifestPath = APP_DIR . '/public/dist/.vite/manifest.json';
-        if (!file_exists($manifestPath)) {
-            return '';
-        }
+        $this->loadManifest();
 
-        $manifest = json_decode(file_get_contents($manifestPath), true);
-        $jsFile = $manifest[$entry]['file'] ?? '';
-        $cssFiles = $manifest[$entry]['css'] ?? [];
+        $jsFile = $this->manifest[$entry]['file'] ?? '';
+        $cssFiles = $this->manifest[$entry]['css'] ?? [];
 
         $html = '';
         foreach ($cssFiles as $css) {
@@ -39,5 +38,20 @@ class Vite
         }
 
         return $html;
+    }
+
+    /**
+     * Load the Vite manifest file if it hasn't been loaded yet.
+     */
+    private function loadManifest(): void
+    {
+        if ($this->manifest === null) {
+            $manifestPath = APP_DIR . '/public/dist/.vite/manifest.json';
+            if (file_exists($manifestPath)) {
+                $this->manifest = json_decode(file_get_contents($manifestPath), true);
+            } else {
+                $this->manifest = [];
+            }
+        }
     }
 }
