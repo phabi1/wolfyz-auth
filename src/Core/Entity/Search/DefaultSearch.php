@@ -28,8 +28,7 @@ class DefaultSearch implements SearchInterface
         $matches = [];
         foreach ($fields as $field) {
             if (strpos($field, '.') === false) {
-                $alias = 'a';
-                $query->where($db->expr()->like($alias . '.' . $field, '%' . $search . '%'));
+                $matches[] = $alias . '.' . $field;
             } else {
                 list($relationName, $relationField) = explode('.', $field);
                 if (!$definition->getRelations()->has($relationName)) {

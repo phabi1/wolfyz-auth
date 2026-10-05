@@ -4,7 +4,7 @@ namespace App\Auth\Authentication;
 
 class Identity
 {
-    private string $id;
+    private string $id = '';
 
     public function __construct(string $id)
     {
@@ -14,5 +14,10 @@ class Identity
     public function getId(): string
     {
         return $this->id;
+    }
+
+    public function isGuest(): bool
+    {
+        return $this->id === '';
     }
 }

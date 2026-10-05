@@ -1,12 +1,6 @@
 <?php
-
-return array_merge([
-    'index' => [
-        'path' => '/',
-        'controller' => [\App\User\Controller\AccountController::class, 'index'],
-        'methods' => ['GET']
-    ]
-],
-require __DIR__ . '/routes/auth.php',
-require __DIR__ . '/routes/oauth2.php'
+return array_merge(
+    require __DIR__ . '/routes/auth.php',
+    require __DIR__ . '/routes/oidc.php',
+    require __DIR__ . '/routes/user.php',
 );

@@ -4,7 +4,7 @@ namespace App\User\Password;
 
 class PasswordEncoder
 {
-    public function encode(string $password): string
+    public function hash(string $password): string
     {
         return password_hash($password, PASSWORD_BCRYPT);
     }

@@ -2,85 +2,111 @@
 
 namespace App\Auth\Controller;
 
+use App\Core\Db\Exception\DuplicateEntryException;
+use App\Core\Http\Request;
+use App\Core\Http\Response;
+use App\Core\Http\RedirectResponse;
 use App\Core\Mvc\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 class SignController extends AbstractController
 {
-    public function signinAction(Request $request)
+    public function signinAction(Request $request): Response
     {
-        $fields = [
-            'identity' => '',
-            'password' => ''
-        ];
+        if ($this->checkIsAlreadyLoggedIn()) {
+            return new RedirectResponse($this->redirectTarget());
+        }
 
-        $error = null;
+        $data = ['email' => '', 'error' => '', 'csrf' => $this->csrfToken()->generate()];
 
-        if ($request->isMethod('POST')) {
+        if ($request->method === 'POST') {
+            $csrf = (string) ($request->body->get('csrf') ?? '');
+            if (!$this->csrfToken()->validate($csrf)) {
+                $data['error'] = $this->translate('Invalid CSRF token.');
 
-            $fields['identity'] = $request->request->get('identity', '');
-            $fields['password'] = $request->request->get('password', '');
+                return $this->render('auth/signin', $data);
+            }
+            $email = trim((string) ($request->body->get('email') ?? ''));
+            $password = (string) ($request->body->get('password') ?? '');
+            $data['email'] = $email;
 
-            $useCaseBus = $this->getService('use-case-bus');
-            $result = $useCaseBus->execute('auth.sign-in', $fields);
+            $authenticationService = $this->getService('auth.authentication');
+            $res = $authenticationService->validate($email, $password);
 
-            if ($result) {
-                $session = $this->getService('session');
-                if ($session->has('oauth2_redirect_uri')) {
-                    $url = $session->get('oauth2_redirect_uri', '/');
-                    $session->remove('oauth2_redirect_uri');
-                    return new RedirectResponse($url);
-                } else {
-                    return $this->redirectToRoute('index');
-                }
-            } else {
-                $error = 'invalid_identity_or_password';
+            if ($res->valid) {
+                $authenticationService->login($res->user->id);
+
+                return new RedirectResponse($this->redirectTarget());
+            }
+
+            $data['error'] = $this->translate('Invalid email or password.');
+        }
+
+        return $this->render('auth/signin', $data);
+    }
+
+    public function signupAction(Request $request): Response
+    {
+        if ($this->checkIsAlreadyLoggedIn()) {
+            return new RedirectResponse($this->redirectTarget());
+        }
+
+        $data = ['email' => '', 'name' => '', 'error' => '', 'csrf' => $this->csrfToken()->generate()];
+
+        if ($request->method === 'POST') {
+            $csrf = (string) ($request->body->get('csrf') ?? '');
+            if (!$this->csrfToken()->validate($csrf)) {
+                $data['error'] = $this->translate('Invalid CSRF token.');
+
+                return $this->render('auth/signup', $data);
+            }
+
+            $email = trim((string) ($request->body->get('email') ?? ''));
+            $password = (string) ($request->body->get('password') ?? '');
+            $firstname = trim((string) ($request->body->get('firstname') ?? ''));
+            $lastname = trim((string) ($request->body->get('lastname') ?? ''));
+            $data['email'] = $email;
+            $data['firstname'] = $firstname;
+            $data['lastname'] = $lastname;
+
+            try {
+                $user = $this->useCaseBus('auth.register-user', [
+                    'email' => $email,
+                    'password' => $password,
+                    'firstname' => $firstname,
+                    'lastname' => $lastname,
+                ]);
+                $this->getService('auth.authentication')->login($user->id);
+                return new RedirectResponse($this->redirectTarget());
+            } catch (\App\Auth\Exception\EmailAlreadyExistsException $e) {
+                $data['error'] = $this->translate('Email already exists');
+            } catch (\Exception $e) {
+                $data['error'] = $this->translate('Unexpected error');
             }
         }
 
-        $signupUrl = $this->getService('router-generator')->generate('signup');
-
-        return $this->render('auth/signin', ['error' => $error, 'fields' => $fields]);
+        return $this->render('auth/signup', $data);
     }
 
-    public function signupAction(Request $request)
+    public function signoutAction(Request $request): Response
     {
-        $fields = [
-            'email' => '',
-            'password' => '',
-            'confirm_password' => '',
-            'firstname' => '',
-            'lastname' => '',
+        $this->getService('auth.authentication')->logout();
 
-        ];
-        if ($request->isMethod('POST')) {
-            $fields['email'] = $request->request->get('email', '');
-            $fields['password'] = $request->request->get('password', '');
-            $fields['confirm_password'] = $request->request->get('confirm_password', '');
-            $fields['firstname'] = $request->request->get('firstname', '');
-            $fields['lastname'] = $request->request->get('lastname', '');
+        $redirect = $request->query->get('post_logout_redirect_uri') ?? '/signin';
 
-            $useCaseBus = $this->getService('use-case-bus');
-            $useCaseBus->execute('auth.sign-up', $fields);
-
-            $session = $this->getService('session');
-            $session = $this->getService('session');
-            if ($session->has('oauth2_redirect_uri')) {
-                $url = $session->get('oauth2_redirect_uri', '/');
-                $session->remove('oauth2_redirect_uri');
-                return new RedirectResponse($url);
-            } else {
-                return $this->redirectToRoute('index');
-            }
-        }
-        return $this->render('auth/signup', $fields ?? []);
+        return new RedirectResponse($redirect);
     }
 
-    public function signoutAction(Request $request)
+    private function checkIsAlreadyLoggedIn(): bool
     {
-        $this->getService('auth.authenticator')->logout();
-        return $this->redirectToRoute('index');
+        return !empty($this->getService('session')->get('user_id'));
+    }
+
+    private function redirectTarget(): string
+    {
+        $session = $this->getService('session');
+        $target = $session->get('pending_authorize', '/');
+        $session->remove('pending_authorize');
+
+        return $target;
     }
 }

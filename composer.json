@@ -1,13 +1,7 @@
 {
-    "name": "wolfs/auth",
+    "name": "wolf/auth",
     "type": "project",
-    "require": {
-        "league/oauth2-server": "^9.4",
-        "symfony/http-foundation": "^7.4",
-        "symfony/routing": "^7.4",
-        "symfony/psr-http-message-bridge": "^7.4",
-        "nyholm/psr7": "^1.8"
-    },
+    "description": "Standalone OpenID Connect provider (no framework)",
     "autoload": {
         "psr-4": {
             "App\\": "src/"
@@ -17,5 +11,16 @@
         {
             "name": "phabi1"
         }
-    ]
+    ],
+    "require": {
+        "php": ">=8.2",
+        "league/oauth2-server": "^9.0",
+        "firebase/php-jwt": "^6.10",
+        "nyholm/psr7": "^1.8",
+        "nyholm/psr7-server": "^1.1",
+        "phpmailer/phpmailer": "^7.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    }
 }

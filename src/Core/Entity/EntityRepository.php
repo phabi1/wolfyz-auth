@@ -13,12 +13,12 @@ class EntityRepository implements EntityRepositoryInterface
     protected Db $db;
     protected Definition $definition;
 
-    public function setDb(Db $db)
+    public function setDb(Db $db): void
     {
         $this->db = $db;
     }
 
-    public function setDefinition(Definition $definition)
+    public function setDefinition(Definition $definition): void
     {
         $this->definition = $definition;
     }
@@ -28,26 +28,35 @@ class EntityRepository implements EntityRepositoryInterface
         return $this->definition; // Implementation for fetching the entity definition
     }
 
-    public function findById($id): \stdClass|null
+    public function findById($id, array $options = []): \stdClass|null
     {
-        return $this->findOne(['id' => ['eq' => $id]]); // Implementation for fetching a single item by ID based on the definition
+        $primaryKeys = $this->getDefinition()->getPrimaryKeys();
+        if (count($primaryKeys) !== 1) {
+            throw new \InvalidArgumentException('findByIds only supports entities with a single primary key.');
+        }
+        $condition = [$primaryKeys[0] => ['eq' => $id]];
+        return $this->findOne($condition, $options); // Implementation for fetching a single item by ID based on the definition
     }
 
-    public function findByIds(array $ids): array
+    public function findByIds(array $ids, array $options = []): array
     {
-        return $this->find(['id' => ['in' => $ids]]); // Implementation for fetching multiple items by an array of IDs based on the definition
+        $primaryKeys = $this->getDefinition()->getPrimaryKeys();
+        if (count($primaryKeys) !== 1) {
+            throw new \InvalidArgumentException('findByIds only supports entities with a single primary key.');
+        }
+        return $this->find([$primaryKeys[0] => ['in' => $ids]], $options); // Implementation for fetching multiple items by an array of IDs based on the definition
     }
 
-    public function findOne($filters = []): \stdClass|null
+    public function findOne($filters = [], array $options = []): \stdClass|null
     {
-        $options = [
+        $options = array_merge([
             'limit' => 1
-        ];
+        ], $options);
         $results = $this->find($filters, $options);
         return count($results) > 0 ? $results[0] : null;
     }
 
-    public function find($filters = [], $options = []): array
+    public function find($filters = [], array $options = []): array
     {
         $options = array_merge([
             'offset' => null,
@@ -77,7 +86,22 @@ class EntityRepository implements EntityRepositoryInterface
         }, $res);
     }
 
-    public function count($filters = []): int
+    /**
+     * Check if a record exists matching the filters
+     * @param array $filters
+     * @return bool Return true if at least one record matches the filters, false otherwise
+     */
+    public function exists(array $filters = []): bool
+    {
+        return $this->count($filters) > 0;
+    }
+
+    /**
+     * Count the number of records matching the filters
+     * @param array $filters
+     * @return int
+     */
+    public function count(array $filters = []): int
     {
         $sql = $this->db->createQuery()
             ->select('COUNT(*)', 'count')
@@ -99,21 +123,22 @@ class EntityRepository implements EntityRepositoryInterface
             }
         }
 
-        if (isset($this->definition['fields']['created_at']) && !isset($data['created_at'])) {
+        if ($this->definition->isTimestampable()) {
             $data['created_at'] = date('Y-m-d H:i:s');
-        }
-
-
-        if (isset($this->definition['fields']['updated_at']) && !isset($data['updated_at'])) {
             $data['updated_at'] = date('Y-m-d H:i:s');
         }
 
         try {
             $id = $this->db->insert($this->definition['table'], $data); // Implementation for creating a new item based on the definition and provided data
+            if ($this->definition->isAutoIncrement() && !$id) {
+                throw new \Exception('Failed to insert entity and retrieve auto-incremented ID');
+            }
+            if (!$this->definition->isAutoIncrement()) {
+                $id = $data['id'] ?? null;
+            }
         } catch (DuplicateEntryException $e) {
             throw new DuplicateEntityException($this->getDefinition()->getName());
         }
-
         return $this->findById($id);
     }
 
@@ -121,7 +146,7 @@ class EntityRepository implements EntityRepositoryInterface
     {
         $data = $this->serialize($obj);
 
-        if (isset($this->definition['fields']['updated_at']) && !isset($data['updated_at'])) {
+        if ($this->definition->isTimestampable()) {
             $data['updated_at'] = date('Y-m-d H:i:s');
         }
 
@@ -228,6 +253,18 @@ class EntityRepository implements EntityRepositoryInterface
                         case 'in':
                             $where[] = $this->db->expr()->in($field, $value);
                             break;
+                        case 'lt':
+                            $where[] = $this->db->expr()->lt([$field, $value], false);
+                            break;
+                        case 'lte':
+                            $where[] = $this->db->expr()->lt([$field, $value], true);
+                            break;
+                        case 'gt':
+                            $where[] = $this->db->expr()->gt([$field, $value], false);
+                            break;
+                        case 'gte':
+                            $where[] = $this->db->expr()->gt([$field, $value], true);
+                            break;
                         default:
                             throw new \Exception("Unsupported operator: {$operator}");
                     }
@@ -238,5 +275,20 @@ class EntityRepository implements EntityRepositoryInterface
         if ($where) {
             $sql->where($this->db->expr()->and($where));
         }
+    }
+
+    public function beginTransaction(): void
+    {
+        $this->db->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->db->commit();
+    }
+
+    public function rollback(): void
+    {
+        $this->db->rollback();
     }
 }

@@ -38,29 +38,33 @@ class Db
 
     public function escape(mixed $value): mixed
     {
+        if ($value === null) {
+            return 'NULL';
+        }
         if (is_string($value)) {
             return $this->_handler->escape($value);
         }
         return $value;
     }
 
-    public function quote(string $field): string {
-        return '`'.$field.'`';
+    public function quote(string $field): string
+    {
+        return '`' . $field . '`';
     }
 
     public function beginTransaction()
     {
-        $this->_handler->query('START TRANSACTION');
+        $this->_handler->execute('START TRANSACTION');
     }
 
     public function commit()
     {
-        $this->_handler->query('COMMIT');
+        $this->_handler->execute('COMMIT');
     }
 
     public function rollback()
     {
-        $this->_handler->query('ROLLBACK');
+        $this->_handler->execute('ROLLBACK');
     }
 
     public function rows($sql)
@@ -90,7 +94,7 @@ class Db
         return $res;
     }
 
-        public function insert($table, $data)
+    public function insert($table, $data)
     {
         $keys = array_map(function ($field) {
             return $this->quote($field);
@@ -163,7 +167,7 @@ class Db
         }
     }
 
-    private function handleError()
+    private function handleError($e)
     {
         $error = $this->_handler->lastError();
         $message = $error[2] ?? null;
@@ -171,7 +175,7 @@ class Db
             $message = 'Unknown database error.';
         }
         if (str_contains($message, 'Duplicate entry')) {
-            throw new DuplicateEntryException($message, $this->_handler->last_query);
+            throw new DuplicateEntryException($message, $this->_handler->lastQuery());
         }
         throw new DbException($message, $this->_handler->lastQuery());
     }

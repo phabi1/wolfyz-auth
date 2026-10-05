@@ -1,23 +1,33 @@
 {
   "name": "auth",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "touch hot && vite",
-    "build": "rm -f hot && vite build"
+  "description": "Standalone OpenID Connect provider written in plain PHP (no framework such as Symfony or Laravel). It only relies on two small libraries:",
+  "homepage": "https://github.com/phabi1/wolfyz-auth#readme",
+  "bugs": {
+    "url": "https://github.com/phabi1/wolfyz-auth/issues"
   },
-  "keywords": [],
-  "author": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phabi1/wolfyz-auth.git"
+  },
   "license": "ISC",
+  "author": "",
   "type": "commonjs",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test:vite": "node --test tests/Vite/config.test.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "dependencies": {
-    "@tailwindcss/cli": "^4.3.3"
+    "vite": "^8.3.2"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
-    "tailwindcss": "^4.3.3",
-    "vite": "^8.2.2"
+    "@tailwindcss/vite": "^4.1.0",
+    "tailwindcss": "^4.1.0"
   }
 }

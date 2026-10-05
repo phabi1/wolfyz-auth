@@ -3,13 +3,13 @@
 namespace App\Core\Db\Expr;
 
 use App\Core\Db\DbAwareInterface;
-use App\Core\Db\Query;
 use App\Core\Db\DbAwareTrait;
+use App\Core\Db\Query;
 
 class In implements ExprInterface, DbAwareInterface
 {
     use DbAwareTrait;
-
+    
     private $field;
     private $values;
 

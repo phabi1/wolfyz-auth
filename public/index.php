@@ -2,11 +2,14 @@
 
 require __DIR__ . '/../vendor/autoload.php';
 
-define('APP_DIR', realpath(__DIR__ . '/..'));
-define('APP_ENV', getenv('APP_ENV') ?: 'production');
+$env = getenv('APP_ENV');
+if (!$env) {
+    $env = 'production';
+}
+
+define('APP_ENV', $env);
+define('APP_DIR', __DIR__ . '/..');
 define('CONFIG_DIR', APP_DIR . '/config');
 define('CACHE_DIR', APP_DIR . '/cache');
 
-date_default_timezone_set('Europe/Paris');
-
-\App\Application::run();
+(new App\Core\Kernel\HttpKernel)->run();

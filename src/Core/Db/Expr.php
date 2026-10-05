@@ -14,6 +14,7 @@ class Expr implements DbAwareInterface
         'gt' => Expr\MoreThan::class,
         'lt' => Expr\LessThan::class,
         'like' => Expr\Like::class,
+        'match' => Expr\Matches::class,
     ];
 
     public function __call($method, $args)

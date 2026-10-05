@@ -19,6 +19,9 @@ class Eq implements ExprInterface, DbAwareInterface
 
     function build()
     {
+        if (is_array($this->value)) {
+           var_dump($this->value);
+        }
         return $this->field . ' = ' . $this->db->escape($this->value);
     }
 }

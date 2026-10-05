@@ -1,28 +1,24 @@
 <?php
 
 return [
-    'auth.authenticator' => [
-        'class' => \App\Auth\Authentication\Authenticator::class,
-        'arguments' => ['@session']
+    'auth.password-reset' => [
+        'class' => App\Auth\Password\PasswordResetService::class,
+        'arguments' => ['@entity.manager', '@user.token', '@mailer', '!base_url'],
     ],
-    'auth.use-case.signin' => [
-        'class' => \App\Auth\UseCase\SignInUseCase::class,
-        'arguments' => ['@entity-manager', '@user.password-encoder', '@auth.authenticator'],
-        'tags' => [
-            [
-                'name' => 'use-case',
-                'value' => 'auth.sign-in'
-            ]
+    'auth.controller.password' => [
+        'class' => App\Auth\Controller\PasswordController::class,
+        'tags' => [['name' => 'controller', 'value' => 'auth.password']],
+    ],
+    'auth.authentication' => [
+        'class' => App\Auth\Authentication\AuthenticationService::class,
+        'arguments' => [
+            '@entity.manager',
+            '@user.password-encoder',
+            '@session'
         ]
     ],
-    'auth.use-case.signup' => [
-        'class' => \App\Auth\UseCase\SignUpUseCase::class,
-        'arguments' => ['@entity-manager', '@user.password-encoder', '@auth.authenticator'],
-        'tags' => [
-            [
-                'name' => 'use-case',
-                'value' => 'auth.sign-up'
-            ]
-        ]
-    ]
+    'auth.controller.sign' => [
+        'class' => App\Auth\Controller\SignController::class,
+        'tags' => [['name' => 'controller', 'value' => 'auth.sign']]
+    ],
 ];

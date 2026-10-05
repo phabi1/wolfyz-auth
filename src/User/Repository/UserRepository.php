@@ -2,30 +2,40 @@
 
 namespace App\User\Repository;
 
+use App\Core\Db\Db;
 use App\Core\Entity\EntityRepository;
+use App\User\Password\PasswordEncoder;
 
-class UserRepository extends EntityRepository implements UserRepositoryInterface {
+class UserRepository extends EntityRepository implements UserRepositoryInterface
+{
+    private PasswordEncoder $passwordEncoder;
 
-    public function findByEmail(string $email): \stdClass | null {
-        $query = $this->db->createQuery();
-        $query->from($this->definition['table'])
-        ->where($this->db->expr()->eq('email', $email));
-
-        $value = $this->db->row($query);
-        return $value ?: null;
+    public function __construct(PasswordEncoder $passwordEncoder)
+    {
+        $this->passwordEncoder = $passwordEncoder;
     }
 
-    public function existsEmail(string $email,?int $exclude = null): bool {
-        $query = $this->db->createQuery();
-        $query->from($this->definition['table'])
-        ->where($this->db->expr()->eq('email', $email))
-        ->select('id');
+    public function findByEmail(string $email): ?\stdClass
+    {
+        $qb = $this->db->createQuery();
+        $qb->select('*')
+            ->from('auth_user')
+            ->where($this->db->expr()->eq('email', $email));
 
-        if ($exclude) {
-            $query->where($this->db->expr()->ne('id', $exclude));
+        return $this->db->row($qb) ?: null;
+    }
+
+    public function insert($data): \stdClass
+    {
+        $data['password_hash'] = $this->passwordEncoder->hash($data['password_hash']);
+        return parent::insert($data);
+    }
+
+    public function update($id, $data): \stdClass
+    {
+        if (isset($data['password_hash'])) {
+            $data['password_hash'] = $this->passwordEncoder->hash($data['password_hash']);
         }
-
-        $value = $this->db->value($query);
-        return $value ? true : false;
+        return parent::update($id, $data);
     }
 }

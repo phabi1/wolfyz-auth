@@ -1,58 +1,25 @@
-<?php $this->layout('blank'); ?>
-<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-    <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-        <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500" alt="Your Company"
-            class="mx-auto h-10 w-auto" />
-        <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">Sign up your account</h2>
-    </div>
+<?php $this->layout()->extend('auth'); ?>
+<?php $this->layout()->startBlock('title'); ?>
+<?php echo $this->translate('Sign up'); ?>
+<?php $this->layout()->endBlock(); ?>
 
-    <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-        <form action="#" method="POST" class="space-y-6">
-            <div>
-                <label for="firstname" class="block text-sm/6 font-medium text-gray-100">First Name</label>
-                <div class="mt-2">
-                    <input id="firstname" type="text" name="firstname" required autocomplete="given-name"
-                        class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
-                </div>
-            </div>
-            <div>
-                <label for="lastname" class="block text-sm/6 font-medium text-gray-100">Last Name</label>
-                <div class="mt-2">
-                    <input id="lastname" type="text" name="lastname" required autocomplete="family-name"
-                        class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
-                </div>
-            </div>
-            <div>
-                <label for="email" class="block text-sm/6 font-medium text-gray-100">Email address</label>
-                <div class="mt-2">
-                    <input id="email" type="email" name="email" required autocomplete="email"
-                        class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
-                </div>
-            </div>
-
-            <div>
-                <div class="flex items-center justify-between">
-                    <label for="password" class="block text-sm/6 font-medium text-gray-100">Password</label>
-                </div>
-                <div class="mt-2">
-                    <input id="password" type="password" name="password" required autocomplete="current-password"
-                        class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
-                </div>
-            </div>
-
-
-            <div>
-                <button type="submit"
-                    class="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">Sign
-                    up</button>
-            </div>
-        </form>
-
-        <p class="mt-10 text-center text-sm/6 text-gray-400">
-            <?php echo $this->translate('Already an account?'); ?>
-            <a href="<?php echo $this->route('signin') ?>" class="font-semibold text-indigo-400 hover:text-indigo-300"><?php echo $this->translate('Sign in!'); ?></a>
-        </p>
-    </div>
-    </body>
-
-    </html>
+<?php $this->layout()->startBlock('content'); ?>
+<form method="post" action="/signup" class="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
+    <?php if ($error ?? null): ?>
+        <div class="rounded border border-red-700 bg-red-100 p-4 mb-4 text-sm text-red-700">
+            <?php echo htmlspecialchars($error); ?>
+        </div>
+    <?php endif; ?>
+    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrf); ?>">
+    <label for="firstname" class="mb-1 block text-sm"><?php echo $this->translate('Firstname'); ?></label>
+    <input type="text" id="firstname" name="firstname" value="<?php echo htmlspecialchars($firstname ?? '', ENT_QUOTES); ?>" required autofocus class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <label for="lastname" class="mb-1 block text-sm"><?php echo $this->translate('Lastname'); ?></label>
+    <input type="text" id="lastname" name="lastname" value="<?php echo htmlspecialchars($lastname ?? '', ENT_QUOTES); ?>" required autofocus class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <label for="email" class="mb-1 block text-sm"><?php echo $this->translate('Email'); ?></label>
+    <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email ?? '', ENT_QUOTES); ?>" required class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <label for="password" class="mb-1 block text-sm"><?php echo $this->translate('Password'); ?></label>
+    <input type="password" id="password" name="password" minlength="8" required class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <button type="submit" class="w-full cursor-pointer rounded bg-blue-600 px-4 py-2.5 text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"><?php echo $this->translate('Create account'); ?></button>
+    <p class="mt-4 text-center text-sm"><a href="<?php echo $this->route('auth-signin'); ?>" class="text-blue-700 underline hover:text-blue-800"><?php echo $this->translate('Already have an account? Sign in'); ?></a></p>
+</form>
+<?php $this->layout()->endBlock(); ?>

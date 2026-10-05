@@ -10,6 +10,12 @@ class Definition implements \ArrayAccess
 
     private $repository;
 
+    private $primary_keys = ['id'];
+
+    private $auto_increment = true;
+
+    private $timestampable = false;
+
     private Fields $fields;
 
     private $relations = [];
@@ -50,6 +56,20 @@ class Definition implements \ArrayAccess
     public function getRepository()
     {
         return $this->repository;
+    }
+
+    public function getPrimaryKeys(): array
+    {
+        return $this->primary_keys;
+    }
+
+    public function isAutoIncrement(): bool
+    {
+        return $this->auto_increment;
+    }
+
+    public function isTimestampable(): bool {
+        return $this->timestampable;
     }
 
     public function getFields(): Fields

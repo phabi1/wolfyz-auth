@@ -17,11 +17,16 @@ class UseCaseBus implements ContainerAwareInterface
             $this->locator = new Locator('use-case');
             $this->locator->setContainer($this->container);
         }
-        
+
         $useCase = $this->locator->get($useCaseClass);
         if (!$useCase) {
             throw new \Exception("Use case $useCaseClass not found");
         }
+        
+        if ($useCase instanceof UseCaseInterface === false) {
+            throw new \Exception("Use case $useCaseClass must implement UseCaseInterface");
+        }
+
         return $useCase->execute($request);
     }
 

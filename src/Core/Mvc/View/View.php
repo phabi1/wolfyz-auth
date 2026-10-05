@@ -2,11 +2,13 @@
 
 namespace App\Core\Mvc\View;
 
+use App\Core\Di\Locator;
+
 class View
 {
     private Renderer\RendererInterface $renderer;
 
-    private $helpers;
+    private Locator $helpers;
 
     public function setRenderer(Renderer\RendererInterface $renderer)
     {
@@ -14,12 +16,12 @@ class View
         $this->renderer->setView($this);
     }
 
-    public function getHelpers()
+    public function getHelpers(): Locator
     {
         return $this->helpers;
     }
 
-    public function setHelpers($helpers)
+    public function setHelpers(Locator $helpers)
     {
         $this->helpers = $helpers;
     }
@@ -27,25 +29,20 @@ class View
     public function render($template, $data = [])
     {
         try {
-        if ($this->renderer) {
-            $content = $this->renderer->render($template, $data);
-            if ($layoutHelper = $this->getHelpers()->get('layout')) {
-                $layoutName = $layoutHelper->getLayout();
-                if ($layoutName) {
-                    $content = $this->renderer->render('layouts/' . $layoutName, ['content' => $content]);
+            if ($this->renderer) {
+                $content = $this->renderer->render($template, $data);
+                $layoutHelper = $this->getHelpers()->get('layout');
+                if ($layoutHelper->hasLayout()) {
+                    $layoutName = $layoutHelper->getLayout();
+                    $content = $this->renderer->render('layouts/' . $layoutName);
                 }
+                $layoutHelper->reset();
+                return $content;
             }
-
-            return $content;
-        }
-        return '';
+            return '';
         } catch (\Throwable $e) {
             return ($e->getMessage());
         }
     }
 
-    private function renderView($template, $data = [])
-    {
-        return $this->renderer ? $this->renderer->render($template, $data) : '';
-    }
 }

@@ -1,54 +1,25 @@
-<?php $this->layout('blank');
-$signUpBtn = '<a href="<?php echo $signup_url ?>" class="font-semibold text-indigo-400 hover:text-indigo-300">' . $this->translate('Sign up') . '</a>';
-?>
-<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
-  <div class="sm:mx-auto sm:w-full sm:max-w-sm">
-    <img src="https://tailwindcss.com/plus-assets/img/logos/mark.svg?color=indigo&shade=500" alt="Your Company"
-      class="mx-auto h-10 w-auto" />
-    <h2 class="mt-10 text-center text-2xl/9 font-bold tracking-tight text-white">Sign in to your account</h2>
-  </div>
-  <div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-    <?php if ($error) { ?>
-      <p class="text-center text-red-500 text-sm/6"><?php echo $this->translate('Invalid identity or password.'); ?></p>
-    <?php } ?>
-    <form action="#" method="POST" class="space-y-6">
-      <div>
-        <label for="identity" class="block text-sm/6 font-medium text-gray-100">Email address</label>
-        <div class="mt-2">
-          <input id="identity" type="email" name="identity" required autocomplete="email"
-            value="<?php echo $fields['identity']; ?>"
-            class="block w-full rounded-md bg-white/5 px-3 p;y-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
-        </div>
-      </div>
+<?php $this->layout()->extend('auth'); ?>
+<?php $this->layout()->startBlock('title'); ?>
+<?php echo $this->translate('Sign in'); ?>
+<?php $this->layout()->endBlock(); ?>
 
-      <div>
-        <div class="flex items-center justify-between">
-          <label for="password" class="block text-sm/6 font-medium text-gray-100">Password</label>
-          <div class="text-sm">
-            <a href="#" class="font-semibold text-indigo-400 hover:text-indigo-300">Forgot password?</a>
-          </div>
-        </div>
-        <div class="mt-2">
-          <input id="password" type="password" name="password" required autocomplete="current-password"
-            value="<?php echo $fields['password']; ?>"
-            class="block w-full rounded-md bg-white/5 px-3 py-1.5 text-base text-white outline-1 -outline-offset-1 outline-white/10 placeholder:text-gray-500 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-500 sm:text-sm/6" />
-        </div>
-      </div>
-
-      <div>
-        <button type="submit"
-          class="flex w-full justify-center rounded-md bg-indigo-500 px-3 py-1.5 text-sm/6 font-semibold text-white hover:bg-indigo-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">Sign
-          in</button>
-      </div>
-    </form>
-
-    <p class="mt-10 text-center text-sm/6 text-gray-400">
-      <?php echo $this->translate('Not a member?') ?>
-      <a href="<?php echo $this->route('signup') ?>" class="font-semibold text-indigo-400 hover:text-indigo-300">
-        <?php echo $this->translate('Create an account !') ?>
-      </a>
-    </p>
-  </div>
-  </body>
-
-  </html>
+<?php $this->layout()->startBlock('content'); ?>
+<form method="post" action="/signin" class="w-full max-w-sm rounded-lg bg-white p-8 shadow-md">
+    <?php if ($error ?? null): ?>
+        <p class="mb-4 text-sm text-red-700"><?php echo htmlspecialchars($error); ?></p>
+    <?php endif; ?>
+    <input type="hidden" name="csrf" value="<?php echo htmlspecialchars($csrf); ?>">
+    <label for="email" class="mb-1 block text-sm"><?php echo $this->translate('Email'); ?></label>
+    <input type="email" id="email" name="email" required autofocus
+        class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <label for="password" class="mb-1 block text-sm"><?php echo $this->translate('Password'); ?></label>
+    <input type="password" id="password" name="password" required
+        class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <button type="submit"
+        class="w-full cursor-pointer rounded bg-blue-600 px-4 py-2.5 text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"><?php echo $this->translate('Sign in'); ?></button>
+    <p class="mt-4 text-center text-sm"><a href="<?php echo $this->route('auth-password-forgot'); ?>"
+            class="text-blue-700 underline hover:text-blue-800"><?php echo $this->translate('Forgot password?'); ?></a></p>
+    <p class="mt-4 text-center text-sm"><a href="<?php echo $this->route('auth-signup'); ?>"
+            class="text-blue-700 underline hover:text-blue-800"><?php echo $this->translate('No account yet? Sign up'); ?></a></p>
+</form>
+<?php $this->layout()->endBlock(); ?>
