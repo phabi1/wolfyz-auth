@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'Welcome' => 'Bienvenue',
+    'Your account for services.' => 'Votre compte pour les services.',
+    'Account navigation' => 'Navigation du compte',
+    'View my profile' => 'Voir mon profil',
     'Email' => 'E-mail',
     'Error' => 'Erreur',
     'Confirm password' => 'Confirmer le mot de passe',

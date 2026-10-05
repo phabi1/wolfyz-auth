@@ -15,6 +15,7 @@ session-based login page) is hand-written under [`src/`](src).
 
 | Method | Path                                   | Purpose                              |
 |--------|-----------------------------------------|---------------------------------------|
+| GET/HEAD | `/`                                   | Public account homepage               |
 | GET    | `/.well-known/openid-configuration`     | OIDC discovery document               |
 | GET    | `/.well-known/jwks.json`                | Public signing key (JWKS)             |
 | GET    | `/authorize`                            | Authorization endpoint (code + PKCE)  |
@@ -24,6 +25,23 @@ session-based login page) is hand-written under [`src/`](src).
 | GET    | `/logout`                               | Clears the session (end_session)      |
 | POST   | `/token`                                | Token endpoint                        |
 | GET/POST | `/oidc/userinfo`                      | OIDC UserInfo endpoint                |
+
+### Homepage
+
+The root route (`auth-home`) renders a responsive, translated Tailwind homepage.
+Guests can sign in, create an account or request a password reset. Signed-in
+users see links to their profile and sign out instead. The page does not consume
+any pending OAuth authorization request and is served with `Cache-Control:
+no-store` because its links depend on the session. Other methods return 405.
+
+On an existing installation, remove the generated `cache/services.php` so the
+new `auth.home` controller registration is loaded.
+
+Run the homepage tests with:
+
+```sh
+php vendor/bin/phpunit --bootstrap vendor/autoload.php --do-not-cache-result tests/Auth/HomeControllerTest.php
+```
 
 ### Password reset
 

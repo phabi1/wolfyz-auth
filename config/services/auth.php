@@ -1,6 +1,10 @@
 <?php
 
 return [
+    'auth.controller.home' => [
+        'class' => App\Auth\Controller\HomeController::class,
+        'tags' => [['name' => 'controller', 'value' => 'auth.home']],
+    ],
     'auth.password-reset' => [
         'class' => App\Auth\Password\PasswordResetService::class,
         'arguments' => ['@entity.manager', '@user.token', '@mailer', '!base_url'],

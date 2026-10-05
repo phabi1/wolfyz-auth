@@ -1,5 +1,11 @@
 <?php
 return [
+    'auth-home' => [
+        'type' => 'literal',
+        'path' => '/',
+        'controller' => 'auth.home',
+        'action' => 'index',
+    ],
     'auth-password-forgot' => [
         'type' => 'literal',
         'path' => '/auth/password/forgot',
