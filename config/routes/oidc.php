@@ -24,14 +24,14 @@ return [
     'oidc-introspect' =>
         [
             'type' => 'literal',
-            'path' => '/oidc/.well-known/openid-configuration',
+            'path' => '/.well-known/openid-configuration',
             'controller' => 'oidc.auth',
             'action' => 'introspect',
         ],
     'oidc-jwks' =>
         [
             'type' => 'literal',
-            'path' => '/oidc/.well-known/jwks.json',
+            'path' => '/.well-known/jwks.json',
             'controller' => 'oidc.auth',
             'action' => 'jwks',
         ],
