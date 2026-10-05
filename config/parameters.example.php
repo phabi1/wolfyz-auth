@@ -7,6 +7,13 @@ return [
         'username' => getenv('DB_USERNAME'),
         'password' => getenv('DB_PASSWORD'),
     ],
+    'oidc' => [
+        'cors' => [
+            'allowed_origins' => array_values(array_filter(array_map(
+                'trim', explode(',', getenv('OIDC_CORS_ALLOWED_ORIGINS') ?: ''),
+            ))),
+        ],
+    ],
     'oauth2' => [
         'issuer' => getenv('OAUTH2_ISSUER'),
         'private_key' => getenv('OAUTH2_PRIVATE_KEY'),

@@ -18,13 +18,43 @@ session-based login page) is hand-written under [`src/`](src).
 | GET/HEAD | `/`                                   | Public account homepage               |
 | GET    | `/.well-known/openid-configuration`     | OIDC discovery document               |
 | GET    | `/.well-known/jwks.json`                | Public signing key (JWKS)             |
-| GET    | `/authorize`                            | Authorization endpoint (code + PKCE)  |
+| GET    | `/oidc/authorize`                       | Authorization endpoint (code + PKCE)  |
 | GET/POST | `/signin`                              | Login form                            |
 | GET/POST | `/auth/password/forgot`               | Request a password reset link         |
 | GET/POST | `/auth/password/reset`                | Set a new password using a reset token |
 | GET    | `/logout`                               | Clears the session (end_session)      |
-| POST   | `/token`                                | Token endpoint                        |
+| POST   | `/oidc/token`                           | Token endpoint                        |
 | GET/POST | `/oidc/userinfo`                      | OIDC UserInfo endpoint                |
+
+### OIDC CORS
+
+Set `OIDC_CORS_ALLOWED_ORIGINS` to a comma-separated list of exact frontend
+origins, e.g. `http://localhost:4200,https://club.example.com`. Origins include
+the scheme and optional port, without a path or trailing slash. Wildcards and
+`null` origins are not supported. Development defaults to
+`http://localhost:4200`; the example production configuration allows none until
+configured. The Compose auth service forwards this variable; recreate that
+service after changing its environment.
+
+CORS applies only to the OIDC routes above, including discovery and JWKS, not
+to account pages or external Google/Microsoft callbacks. Allowed origins receive
+`Access-Control-Allow-Origin` on successful responses, redirects and errors,
+with `Vary: Origin`. `WWW-Authenticate` is exposed for UserInfo error handling.
+Cookies/credentialed cross-origin requests are not enabled: navigate to the
+authorization endpoint normally, and use tokens for API requests.
+
+`OPTIONS` preflights return 204 without invoking authentication or token
+processing. Allowed methods match each endpoint (GET for authorize/discovery/
+JWKS, POST for token, GET/POST for UserInfo); allowed request headers are
+`Content-Type` and `Authorization`. An unapproved origin, method or header
+returns 403 without CORS permission. Preflight permissions are cached for
+600 seconds. Requests without an Origin continue to work normally.
+
+Run the CORS and OIDC tests with:
+
+```sh
+php vendor/bin/phpunit --bootstrap vendor/autoload.php --do-not-cache-result tests/Oidc
+```
 
 ### Homepage
 

@@ -4,26 +4,21 @@ namespace App\Core\Kernel;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Http\JsonResponse;
-use App\Core\Security\Firewall;
+use App\Oidc\Cors;
 
 class HttpKernel extends Base
 {
     public function run()
     {
         $this->bootstrap();
+        $this->handle(Request::fromGlobals())->send();
+    }
 
+    public function handle(Request $request): Response
+    {
+        $cors = null;
+        $oidcRoute = false;
         try {
-            $request = Request::fromGlobals();
-
-            $referer = $request->headers->get('Origin');
-
-            if ($request->method === 'OPTIONS') {
-                $response = new Response('', 204);
-                $this->withCors($response, $referer);
-                $response->send();
-                return;
-            }
-
             $container = $this->getContainer();
 
             $routeMatcher = $container->get('route.matcher');
@@ -31,6 +26,12 @@ class HttpKernel extends Base
             $routeMatched = $routeMatcher->match($request);
             if (!$routeMatched) {
                 throw new \Exception('Route not found');
+            }
+
+            $cors = new Cors($container->get('parameters'));
+            $oidcRoute = $cors->supports($routeMatched);
+            if ($oidcRoute && $request->method === 'OPTIONS') {
+                return $cors->preflight($request, $routeMatched);
             }
 
             $controllers = $container->get('controller');
@@ -47,17 +48,9 @@ class HttpKernel extends Base
             $response = new JsonResponse(['error' => 'internal_server_error', 'message' => $e->getMessage()], 500);
         }
 
-        if (isset($response)) {
-            $this->withCors($response, $referer);
+        if (!$response instanceof Response) {
+            throw new \RuntimeException('Controller must return an HTTP response.');
         }
-        $response?->send();
-
-    }
-
-    private function withCors($response, $referer)
-    {
-        $response->headers->set('Access-Control-Allow-Origin', $referer);
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Api-Key');
+        return $oidcRoute ? $cors->apply($request, $response) : $response;
     }
 }

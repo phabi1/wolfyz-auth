@@ -4,6 +4,7 @@ namespace App\Oidc\Controller;
 
 use App\Core\Http\JsonResponse;
 use App\Core\Http\Psr7;
+use App\Core\Http\Psr7Response;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Http\RedirectResponse;
@@ -23,9 +24,7 @@ class AuthController extends ApiController
         try {
             $authRequest = $server->validateAuthorizationRequest($psrRequest);
         } catch (OAuthServerException $e) {
-            Psr7::emit($e->generateHttpResponse(Psr7::blankResponse()));
-
-            return null;
+            return new Psr7Response($e->generateHttpResponse(Psr7::blankResponse()));
         }
 
         $redirectUri = $psrRequest->getServerParams()['REQUEST_URI'] ?? '/';
@@ -55,14 +54,10 @@ class AuthController extends ApiController
         try {
             $response = $server->completeAuthorizationRequest($authRequest, Psr7::blankResponse());
         } catch (OAuthServerException $e) {
-            Psr7::emit($e->generateHttpResponse(Psr7::blankResponse()));
-
-            return null;
+            return new Psr7Response($e->generateHttpResponse(Psr7::blankResponse()));
         }
 
-        Psr7::emit($response);
-
-        return null;
+        return new Psr7Response($response);
     }
 
     public function tokenAction(Request $request): ?Response
@@ -73,14 +68,10 @@ class AuthController extends ApiController
         try {
             $response = $server->respondToAccessTokenRequest($psrRequest, Psr7::blankResponse());
         } catch (OAuthServerException $e) {
-            Psr7::emit($e->generateHttpResponse(Psr7::blankResponse()));
-
-            return null;
+            return new Psr7Response($e->generateHttpResponse(Psr7::blankResponse()));
         }
 
-        Psr7::emit($response);
-
-        return null;
+        return new Psr7Response($response);
     }
 
     public function userinfoAction(Request $request): ?Response

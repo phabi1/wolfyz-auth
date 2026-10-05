@@ -13,9 +13,9 @@ class Introspection
     public function build() {
         return [
             'issuer' => $this->issuer,
-            'introspect_endpoint' => $this->issuer . '/oidc/.well-known/openid-configuration',
-            'jwks_uri' => $this->issuer . '/oidc/.well-known/jwks.json',
-            'authorize_endpoint' => $this->issuer . '/oidc/authorize',
+            'introspect_endpoint' => $this->issuer . '/.well-known/openid-configuration',
+            'jwks_uri' => $this->issuer . '/.well-known/jwks.json',
+            'authorization_endpoint' => $this->issuer . '/oidc/authorize',
             'token_endpoint' => $this->issuer . '/oidc/token',
             'userinfo_endpoint' => $this->issuer . '/oidc/userinfo',
             'grant_types_supported' => $this->getGrantTypesSupported(),

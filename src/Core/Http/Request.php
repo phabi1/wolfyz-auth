@@ -51,7 +51,7 @@ class Request
 
     public function header(string $name): ?string
     {
-        return $this->headers[strtoupper($name)] ?? null;
+        return $this->headers->get(strtoupper($name));
     }
 
     public function bearerToken(): ?string
