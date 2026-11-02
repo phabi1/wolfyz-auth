@@ -3,6 +3,8 @@
 namespace App\Oidc\Server;
 
 use App\Core\Config\Parameters;
+use App\Core\Watchdog\WatchdogAwareInterface;
+use App\Core\Watchdog\WatchdogAwareTrait;
 use App\Oidc\Server\Repository\AccessTokenRepository;
 use App\Oidc\Server\Repository\AuthCodeRepository;
 use App\Oidc\Server\Repository\ClientRepository;
@@ -13,11 +15,15 @@ use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Grant\AuthCodeGrant;
 use League\OAuth2\Server\Grant\RefreshTokenGrant;
+use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\ResourceServer;
 use App\Oidc\Jwks;
 
-class Server
+class Server implements WatchdogAwareInterface
 {
+
+    use WatchdogAwareTrait;
+
     public function __construct(
         private readonly Parameters $parameters,
         public readonly ClientRepository $clientRepository,
@@ -53,6 +59,10 @@ class Server
             $this->parameters->get('oidc.encryption_key'),
             $responseType
         );
+
+        $server->getEmitter()->addListener(RequestEvent::CLIENT_AUTHENTICATION_FAILED, function ($response) {
+            $this->watchdogService->error('Client authentication failed', ['response' => $response]);
+        });
 
         $authCodeGrant = new AuthCodeGrant(
             $this->authCodeRepository,
