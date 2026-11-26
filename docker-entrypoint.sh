@@ -5,7 +5,7 @@ if [ -f "/app/composer.json" ] && [ ! -d "/app/vendor" ]; then
     composer install --no-interaction --no-progress --working-dir=/app
 fi
 
-# Wait for MySQL to accept connections, then apply the schema (idempotent).
+# Wait for MySQL to accept connections, then apply pending Phinx migrations.
 if [ -n "$DB_HOST" ]; then
     echo "Waiting for database at $DB_HOST:$DB_PORT..."
     for i in $(seq 1 30); do
@@ -14,7 +14,7 @@ if [ -n "$DB_HOST" ]; then
         fi
         sleep 1
     done
-    php /app/bin/migrate.php || true
+    /app/vendor/bin/phinx migrate --configuration /app/phinx.php
 fi
 
 # Generate the RSA keypair used to sign ID tokens / access tokens on first boot.

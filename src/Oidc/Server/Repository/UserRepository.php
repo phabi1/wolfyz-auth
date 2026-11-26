@@ -66,8 +66,8 @@ class UserRepository implements UserRepositoryInterface
             $row->id,
             $row->email,
             $row->name,
-            $row->given_name ?? null,
-            $row->family_name ?? null,
+            $row->firstname ?? null,
+            $row->lastname ?? null,
             (bool) ($row->email_verified ?? false),
         );
     }
