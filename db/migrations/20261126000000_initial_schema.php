@@ -10,11 +10,17 @@ use Phinx\Migration\IrreversibleMigrationException;
  *
  * Every statement is idempotent (CREATE TABLE IF NOT EXISTS / INSERT IGNORE),
  * so this migration is safe to run on installations that already have tables.
+ * The default scopes and client are only inserted into tables created here:
+ * existing installations may have a different structure (e.g. scopes keyed
+ * by "name") and keep their own data.
  */
 final class InitialSchema extends AbstractMigration
 {
     public function up(): void
     {
+        $seedScopes = !$this->hasTable('auth_oauth_scope');
+        $seedClients = !$this->hasTable('auth_oauth_client');
+
         $this->execute(<<<'SQL'
             CREATE TABLE IF NOT EXISTS auth_user (
                 id VARCHAR(64) NOT NULL PRIMARY KEY,
@@ -92,19 +98,23 @@ final class InitialSchema extends AbstractMigration
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             SQL);
 
-        $this->execute(<<<'SQL'
-            INSERT IGNORE INTO auth_oauth_scope (id, description) VALUES
-                ('openid', 'OpenID Connect'),
-                ('profile', 'Basic profile information'),
-                ('email', 'Email address'),
-                ('api', 'Access to the Wolf API')
-            SQL);
+        if ($seedScopes) {
+            $this->execute(<<<'SQL'
+                INSERT IGNORE INTO auth_oauth_scope (id, description) VALUES
+                    ('openid', 'OpenID Connect'),
+                    ('profile', 'Basic profile information'),
+                    ('email', 'Email address'),
+                    ('api', 'Access to the Wolf API')
+                SQL);
+        }
 
-        $this->execute(<<<'SQL'
-            -- Matches club/public/config.json ("clientId": "club", "redirectUri": "http://localhost:4200")
-            INSERT IGNORE INTO auth_oauth_client (id, secret, name, redirect_uris, is_confidential, scopes) VALUES
-                ('club', NULL, 'Club', 'http://localhost:4200', 0, 'openid profile email api')
-            SQL);
+        if ($seedClients) {
+            $this->execute(<<<'SQL'
+                -- Matches club/public/config.json ("clientId": "club", "redirectUri": "http://localhost:4200")
+                INSERT IGNORE INTO auth_oauth_client (id, secret, name, redirect_uris, is_confidential, scopes) VALUES
+                    ('club', NULL, 'Club', 'http://localhost:4200', 0, 'openid profile email api')
+                SQL);
+        }
     }
 
     public function down(): void
