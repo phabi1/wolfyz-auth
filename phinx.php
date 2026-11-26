@@ -9,6 +9,20 @@
  */
 
 $env = getenv('APP_ENV') ?: 'production';
+
+// Constants defined by public/index.php and bin/console, which the
+// parameters files may use (e.g. APP_DIR . '/certs/...')
+foreach ([
+    'APP_ENV' => $env,
+    'APP_DIR' => __DIR__,
+    'CONFIG_DIR' => __DIR__ . '/config',
+    'CACHE_DIR' => __DIR__ . '/cache',
+] as $name => $value) {
+    if (!defined($name)) {
+        define($name, $value);
+    }
+}
+
 $parametersFile = __DIR__ . '/config/parameters.' . $env . '.php';
 if (!is_file($parametersFile)) {
     throw new RuntimeException(sprintf('Parameters file "%s" not found (APP_ENV=%s).', $parametersFile, $env));
