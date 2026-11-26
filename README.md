@@ -81,8 +81,8 @@ hashes and can be used once. A successful reset invalidates all password-reset
 tokens for that user; it does not automatically log the user in. Passwords must
 contain 8 to 72 bytes (the existing password encoder uses bcrypt).
 
-Apply the `CREATE TABLE IF NOT EXISTS auth_user_token` statement from
-`db/schema.sql` on an existing installation. Remove the generated
+The `auth_user_token` table is created by the database migrations (see
+[Database migrations](#database-migrations)). Remove the generated
 `cache/services.php` and `cache/entities.php` so the next request rebuilds the
 service and entity definitions.
 
@@ -143,9 +143,38 @@ generated `cache/services.php` file so the next request rebuilds it.
 ## Local setup
 
 Inside Docker, `docker-entrypoint.sh` runs `composer install`, waits for MySQL
-and applies `db/schema.sql` automatically. It also generates the RSA signing
+and applies pending database migrations (`vendor/bin/phinx migrate`). The
+container does not start if a migration fails. It also generates the RSA signing
 keypair (`OAUTH2_PRIVATE_KEY` / matching `-public.key`) on first boot if it
 doesn't already exist.
+
+## Database migrations
+
+The schema is managed with [Phinx](https://book.cakephp.org/phinx/0/en/index.html).
+Migrations live in `db/migrations/`; applied versions are recorded in the
+`auth_migrations` table (not the default `phinxlog`, because the API shares the
+same database).
+
+`phinx.php` reads the connection from the application's parameters file
+(`config/parameters.<APP_ENV>.php`, key `db`), so set `APP_ENV` before running
+a command:
+
+```sh
+APP_ENV=development vendor/bin/phinx status                    # list applied / pending migrations
+APP_ENV=development vendor/bin/phinx migrate                   # apply pending migrations
+APP_ENV=development vendor/bin/phinx rollback                  # revert the last migration
+APP_ENV=development vendor/bin/phinx create AddSomethingToUser # new migration in db/migrations/
+```
+
+`20261126000000_initial_schema` is the former `db/schema.sql`. It only uses
+`CREATE TABLE IF NOT EXISTS` / `INSERT IGNORE`, so it is safe on an installation
+that was created before Phinx: running `migrate` simply records it and applies
+the later migrations. It cannot be rolled back.
+
+Prefer raw SQL (`$this->execute()`) for `CREATE TABLE` with foreign keys: MySQL
+DDL is not transactional, and tables created through Phinx's table API get the
+`utf8mb4_unicode_ci` collation, which does not match the existing tables and
+breaks foreign keys.
 
 ## Configuration
 
@@ -237,7 +266,8 @@ variables already declared in `docker/docker-compose.yml`:
 ## Notes
 
 - The `club` Angular app is pre-registered as a public (PKCE) client with
-  redirect URI `http://localhost:4200` — see `db/schema.sql`.
+  redirect URI `http://localhost:4200` — see
+  `db/migrations/20261126000000_initial_schema.php`.
 - The OIDC `nonce` is carried from `/authorize` to the issued `id_token` via
   `App\OAuth\NonceContext`, a request-scoped static holder (safe because one
   PHP process handles exactly one HTTP request).
