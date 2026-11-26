@@ -19,9 +19,18 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
       - name: Ajouter HOST aux hôtes connus (Known Hosts)
+        env:
+          SSH_SERVER: ${{ secrets.SSH_SERVER }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.SSH_SERVER }} >> ~/.ssh/known_hosts
+          if [ -n "$SSH_KNOWN_HOSTS" ]; then
+            # Pinned server key (ssh-keyscan -H <server>, checked once by hand)
+            echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          else
+            echo "::warning::SSH_KNOWN_HOSTS secret missing, trusting the key presented by the server"
+            ssh-keyscan -H "$SSH_SERVER" >> ~/.ssh/known_hosts
+          fi
 
       - name: Configure PHP
         uses: shivammathur/setup-php@v2
@@ -61,8 +70,14 @@ jobs:
             --exclude='files' \
             --exclude='certs' \
             --exclude='node_modules' \
+            --exclude='deploy.log' \
             ./ $SSH_USER@$SSH_SERVER:$FTP_SERVER_DIR/
         
-      - name: Run Update Script To Server
+      - name: Run Update Script On Server
+        env:
+          SSH_SERVER: ${{ secrets.SSH_SERVER }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR }}
         run: |
-          curl -s "${{ secrets.DOMAIN_URL }}/update.php?secret=${{ secrets.DEPLOY_SECRET }}"
+          # php is php-cgi on the server, use the CLI matching the CI PHP version
+          ssh "$SSH_USER@$SSH_SERVER" "cd '$FTP_SERVER_DIR' && PHP_BIN=/usr/bin/php8.2-cli bash bin/deploy.sh"

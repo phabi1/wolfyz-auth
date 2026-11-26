@@ -6,3 +6,4 @@ dist
 certs
 config/parameters.*.php
 !config/parameters.example.php
+deploy.log
