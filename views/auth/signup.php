@@ -14,7 +14,7 @@
     <label for="firstname" class="mb-1 block text-sm"><?php echo $this->translate('Firstname'); ?></label>
     <input type="text" id="firstname" name="firstname" value="<?php echo htmlspecialchars($firstname ?? '', ENT_QUOTES); ?>" required autofocus class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
     <label for="lastname" class="mb-1 block text-sm"><?php echo $this->translate('Lastname'); ?></label>
-    <input type="text" id="lastname" name="lastname" value="<?php echo htmlspecialchars($lastname ?? '', ENT_QUOTES); ?>" required autofocus class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
+    <input type="text" id="lastname" name="lastname" value="<?php echo htmlspecialchars($lastname ?? '', ENT_QUOTES); ?>" required class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
     <label for="email" class="mb-1 block text-sm"><?php echo $this->translate('Email'); ?></label>
     <input type="email" id="email" name="email" value="<?php echo htmlspecialchars($email ?? '', ENT_QUOTES); ?>" required class="mb-4 w-full rounded border border-gray-300 p-2 focus:border-blue-600 focus:outline-2 focus:outline-blue-600">
     <label for="password" class="mb-1 block text-sm"><?php echo $this->translate('Password'); ?></label>

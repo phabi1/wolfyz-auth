@@ -25,4 +25,9 @@ return [
         'class' => App\Auth\Controller\SignController::class,
         'tags' => [['name' => 'controller', 'value' => 'auth.sign']]
     ],
+    'auth.use-case.register-user' => [
+        'class' => App\Auth\UseCase\RegisterUserUseCase::class,
+        'arguments' => ['@entity.manager'],
+        'tags' => [['name' => 'use-case', 'value' => 'auth.register-user']],
+    ],
 ];

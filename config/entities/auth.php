@@ -13,7 +13,7 @@ return [
     ],
     'auth-user-provider' => [
         'table' => 'auth_user_provider',
-        'primary_key' => ['user_id', 'auth_provider_id'],
+        'primary_keys' => ['user_id', 'auth_provider_id'],
         'auto_increment' => false,
         'fields' => [
             'user_id' => ['type' => 'string', 'required' => true],

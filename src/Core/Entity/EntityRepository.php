@@ -139,7 +139,23 @@ class EntityRepository implements EntityRepositoryInterface
         } catch (DuplicateEntryException $e) {
             throw new DuplicateEntityException($this->getDefinition()->getName());
         }
-        return $this->findById($id);
+
+        $primaryKeys = $this->getDefinition()->getPrimaryKeys();
+        if (count($primaryKeys) > 1) {
+            $condition = [];
+            foreach ($primaryKeys as $key) {
+                $condition[$key] = ['eq' => $data[$key] ?? null];
+            }
+            $entity = $this->findOne($condition);
+        } else {
+            $entity = $this->findById($id);
+        }
+
+        if (!$entity) {
+            throw new \RuntimeException(sprintf('Failed to load inserted entity "%s".', $this->getDefinition()->getName()));
+        }
+
+        return $entity;
     }
 
     public function update($id, $obj): \stdClass

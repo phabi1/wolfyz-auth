@@ -2,7 +2,8 @@
 
 namespace App\Auth\Controller;
 
-use App\Core\Db\Exception\DuplicateEntryException;
+use App\Auth\Exception\EmailAlreadyExistsException;
+use App\Auth\Exception\InvalidRegistrationException;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Http\RedirectResponse;
@@ -50,7 +51,7 @@ class SignController extends AbstractController
             return new RedirectResponse($this->redirectTarget());
         }
 
-        $data = ['email' => '', 'name' => '', 'error' => '', 'csrf' => $this->csrfToken()->generate()];
+        $data = ['email' => '', 'firstname' => '', 'lastname' => '', 'error' => '', 'csrf' => $this->csrfToken()->generate()];
 
         if ($request->method === 'POST') {
             $csrf = (string) ($request->body->get('csrf') ?? '');
@@ -77,9 +78,12 @@ class SignController extends AbstractController
                 ]);
                 $this->getService('auth.authentication')->login($user->id);
                 return new RedirectResponse($this->redirectTarget());
-            } catch (\App\Auth\Exception\EmailAlreadyExistsException $e) {
+            } catch (EmailAlreadyExistsException) {
                 $data['error'] = $this->translate('Email already exists');
-            } catch (\Exception $e) {
+            } catch (InvalidRegistrationException $e) {
+                $data['error'] = $this->translate($e->getMessage());
+            } catch (\Throwable $e) {
+                error_log(sprintf('Signup failed: %s', $e));
                 $data['error'] = $this->translate('Unexpected error');
             }
         }
@@ -98,7 +102,7 @@ class SignController extends AbstractController
 
     private function checkIsAlreadyLoggedIn(): bool
     {
-        return !empty($this->getService('session')->get('user_id'));
+        return $this->getService('auth.authentication')->isLoggedIn();
     }
 
     private function redirectTarget(): string
