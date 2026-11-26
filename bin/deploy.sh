@@ -67,8 +67,10 @@ PHP_BIN="$(find_php_cli)"
 
 log "Deploying (APP_ENV=$APP_ENV, $PHP_BIN: $("$PHP_BIN" -r 'echo "PHP ", PHP_VERSION;'))"
 
+# display_errors is often off on the server: without it a fatal error
+# (e.g. an unreachable database in phinx.php) exits with 255 and no message
 log "Running database migrations"
-"$PHP_BIN" vendor/bin/phinx migrate --configuration phinx.php
+"$PHP_BIN" -d display_errors=stderr -d error_reporting=E_ALL vendor/bin/phinx migrate --configuration phinx.php
 
 # Cleared after the migrations so entity and service caches are rebuilt
 # from the new code. Done in the shell rather than through bin/console:
