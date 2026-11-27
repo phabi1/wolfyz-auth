@@ -12,7 +12,7 @@ return [
     ],
     'oidc.server.repository.user' => [
         'class' => App\Oidc\Server\Repository\UserRepository::class,
-        'arguments' => ['@entity.manager'],
+        'arguments' => ['@entity.manager', '@user.roles'],
     ],
     'oidc.server.repository.access_token' => [
         'class' => App\Oidc\Server\Repository\AccessTokenRepository::class,
@@ -42,6 +42,10 @@ return [
     'oidc.introspection' => [
         'class' => App\Oidc\Introspection::class,
         'arguments' => ['!oidc.issuer'],
+    ],
+    'oidc.access-token-validator' => [
+        'class' => App\Oidc\AccessTokenValidator::class,
+        'arguments' => ['@oidc.server'],
     ],
     'oidc.userinfo' => [
         'class' => App\Oidc\Userinfo::class,

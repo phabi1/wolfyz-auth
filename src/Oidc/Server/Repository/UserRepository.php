@@ -6,6 +6,7 @@ use App\Core\Entity\EntityManager;
 use App\Core\Entity\EntityRepository;
 use App\Core\Entity\EntityRepositoryInterface;
 use App\Oidc\Server\Entity\UserEntity;
+use App\User\Role\RoleService;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Entities\UserEntityInterface;
 use League\OAuth2\Server\Repositories\UserRepositoryInterface;
@@ -14,7 +15,7 @@ class UserRepository implements UserRepositoryInterface
 {
     private readonly EntityRepositoryInterface $userEntityRepository;
 
-    public function __construct(EntityManager $entityManager)
+    public function __construct(EntityManager $entityManager, private readonly ?RoleService $roles = null)
     {
         $this->userEntityRepository = $entityManager->getRepository('user');
     }
@@ -62,6 +63,8 @@ class UserRepository implements UserRepositoryInterface
 
     private function toEntity(\stdClass $row): UserEntity
     {
+        $roles = $this->roles?->userRoleIds($row->id) ?? [];
+
         return new UserEntity(
             $row->id,
             $row->email,
@@ -69,6 +72,8 @@ class UserRepository implements UserRepositoryInterface
             $row->firstname ?? null,
             $row->lastname ?? null,
             (bool) ($row->email_verified ?? false),
+            $roles,
+            $this->roles?->permissionsOfRoles($roles) ?? [],
         );
     }
 }

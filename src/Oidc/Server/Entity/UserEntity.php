@@ -13,6 +13,10 @@ class UserEntity implements UserEntityInterface
         public readonly ?string $givenName = null,
         public readonly ?string $familyName = null,
         public readonly bool $emailVerified = false,
+        /** @var string[] role identifiers ("roles" scope) */
+        public readonly array $roles = [],
+        /** @var string[] permissions granted by the roles ("roles" scope) */
+        public readonly array $permissions = [],
     ) {
     }
 
