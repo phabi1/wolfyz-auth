@@ -124,6 +124,22 @@ class RoleService
     }
 
     /**
+     * Permissions of an OAuth client acting on its own behalf
+     * (client_credentials grant), granted by its roles (auth_oauth_client_role).
+     *
+     * @return string[]
+     */
+    public function clientPermissions(string $clientId): array
+    {
+        $rows = $this->db->rows(
+            'SELECT role_id FROM auth_oauth_client_role WHERE '
+            . $this->db->expr()->in('client_id', [$clientId])->build()
+        );
+
+        return $this->permissionsOfRoles(array_map(fn ($row) => $row->role_id, $rows));
+    }
+
+    /**
      * Replaces the roles of a user. Checks are made by the caller.
      */
     public function setUserRoles(string $userId, array $roleIds): void

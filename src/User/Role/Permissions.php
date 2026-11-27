@@ -25,6 +25,8 @@ final class Permissions
         'membership.request.edit' => 'Process membership requests',
         'membership.subscription.view' => 'View members and their subscriptions',
         'membership.subscription.edit' => 'Edit members and their subscriptions',
+        'membership.registration' => 'Use the membership registration form (website)',
+        'event.registration' => 'Use the event registration form (website)',
         'event.view' => 'View events',
         'event.edit' => 'Edit events',
     ];

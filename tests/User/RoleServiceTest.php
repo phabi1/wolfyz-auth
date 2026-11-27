@@ -113,4 +113,16 @@ class RoleServiceTest extends UserTestCase
         self::assertSame([], $this->roles->existing(["x') OR 1=1 --"]));
         self::assertSame(['admin'], $this->roles->existing(['admin', 'ghost']));
     }
+
+    public function testClientPermissionsComeFromTheClientRoles(): void
+    {
+        $role = $this->roles->create(
+            ['label' => 'Site web', 'permissions' => ['membership.registration', 'event.registration']],
+            $this->all(),
+        );
+        $this->db->insert('auth_oauth_client_role', ['client_id' => 'wordpress', 'role_id' => $role['id']]);
+
+        self::assertSame(['membership.registration', 'event.registration'], $this->roles->clientPermissions('wordpress'));
+        self::assertSame([], $this->roles->clientPermissions('club'));
+    }
 }
