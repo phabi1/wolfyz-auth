@@ -4,6 +4,7 @@ namespace App\Core\Kernel;
 use App\Core\Http\Request;
 use App\Core\Http\Response;
 use App\Core\Http\JsonResponse;
+use App\Core\Routing\RouteNotFoundException;
 use App\Oidc\Cors;
 
 class HttpKernel extends Base
@@ -25,7 +26,7 @@ class HttpKernel extends Base
 
             $routeMatched = $routeMatcher->match($request);
             if (!$routeMatched) {
-                throw new \Exception('Route not found');
+                throw new RouteNotFoundException($request->method, $request->path);
             }
             foreach ($routeMatched->parameters->all() as $name => $value) {
                 if (is_string($name)) {
@@ -49,8 +50,13 @@ class HttpKernel extends Base
             $response = $controller->dispatch($routeMatched->action, $request);
 
         } catch (\Throwable $e) {
-            $this->getContainer()->get('watchdog')->error($e->getMessage(), ['trace' => $e->getTraceAsString()]);
-            $response = new JsonResponse(['error' => 'internal_server_error', 'message' => $e->getMessage()], 500);
+            if ($e instanceof RouteNotFoundException) {
+                $this->getContainer()->get('watchdog')->warning($e->getMessage() . ' [' . $e->method . ' ' . $e->path . ']', ['trace' => $e->getTraceAsString()]);
+                $response = new JsonResponse(['error' => 'not_found', 'message' => $e->getMessage()], 404);
+            } else {
+                $this->getContainer()->get('watchdog')->error($e->getMessage(), ['trace' => $e->getTraceAsString()]);
+                $response = new JsonResponse(['error' => 'internal_server_error', 'message' => $e->getMessage()], 500);
+            }
         }
 
         if (!$response instanceof Response) {
