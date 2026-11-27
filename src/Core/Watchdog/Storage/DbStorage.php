@@ -14,7 +14,7 @@ class DbStorage implements StorageInterface
     
     public function log(string $message, array $data = [], string $level = 'info')
     {
-        $this->db->insert('wolf_watchdog_log', [
+        $this->db->insert('auth_watchdog_log', [
             'message' => $message,
             'data' => json_encode($data),
             'level' => $level,
