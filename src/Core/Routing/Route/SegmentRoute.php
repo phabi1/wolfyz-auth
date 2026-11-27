@@ -36,7 +36,8 @@ class SegmentRoute extends Route
     {
         $pattern = preg_replace_callback('/\{(\w+)\}/', function ($matches) {
             $name = $matches[1];
-            return $this->constraints[$name] ?? '[^/]+';
+            // Named group so that the value is exposed as a route parameter.
+            return '(?P<' . $name . '>' . ($this->constraints[$name] ?? '[^/]+') . ')';
         }, $this->path);
         $pattern = '#^' . $pattern . '$#';
         if (preg_match($pattern, $request->path, $matches)) {

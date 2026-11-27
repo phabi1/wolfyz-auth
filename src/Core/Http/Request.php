@@ -12,6 +12,9 @@ class Request
 
     public readonly Bag $headers;
 
+    /** Route parameters (e.g. "id" for /api/users/{id}), set by the kernel. */
+    public readonly Bag $attributes;
+
     private function __construct(
         public readonly string $method,
         public readonly string $path,
@@ -22,6 +25,7 @@ class Request
         $this->query = new Bag($query);
         $this->body = new Bag($body);
         $this->headers = new Bag($headers);
+        $this->attributes = new Bag();
     }
 
     public static function fromGlobals(): self
