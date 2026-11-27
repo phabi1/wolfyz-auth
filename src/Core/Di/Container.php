@@ -87,7 +87,7 @@ class Container
             $service->setContainer($this);
         }
 
-        if ($service instanceof \App\Core\Watchdog\WatchdogAwareInterface && $name !== 'watchdog') {
+        if ($service instanceof \App\Core\Watchdog\WatchdogAwareInterface && $name !== 'watchdog' && $this->has('watchdog')) {
             $service->setWatchdogService($this->get('watchdog'));
         }
 
