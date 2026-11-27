@@ -165,6 +165,8 @@ themselves. For that, the access token (JWT) also carries:
 - `permissions`: the permissions of the user's roles when the token was
   issued (renewed with every token refresh);
 - `iss`: the issuer (`oidc.issuer`);
+- `email` and `email_verified` with the `email` scope (the club API finds the
+  user's event registrations made with their verified address);
 - the `kid` header, so that resource servers find the signing key in
   `/.well-known/jwks.json`.
 

@@ -26,6 +26,9 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     /** @var string[]|null permissions of the user when the token was issued */
     private ?array $permissions = null;
 
+    /** @var array<string, mixed> other claims about the user (email) */
+    private array $userClaims = [];
+
     public function setNonce(?string $nonce): void
     {
         $this->nonce = $nonce;
@@ -65,8 +68,20 @@ class AccessTokenEntity implements AccessTokenEntityInterface
     }
 
     /**
+     * Claims about the user for the resource servers, e.g. "email" and
+     * "email_verified" (the club API finds the user's event registrations).
+     *
+     * @param array<string, mixed> $claims
+     */
+    public function setUserClaims(array $claims): void
+    {
+        $this->userClaims = $claims;
+    }
+
+    /**
      * Same claims as league's AccessTokenTrait::convertToJWT() (private, so it
-     * cannot be extended), plus "iss", "permissions" and the "kid" header.
+     * cannot be extended), plus "iss", "permissions", the user claims and the
+     * "kid" header.
      */
     public function toString(): string
     {
@@ -93,6 +108,9 @@ class AccessTokenEntity implements AccessTokenEntityInterface
         }
         if ($this->permissions !== null) {
             $builder = $builder->withClaim('permissions', $this->permissions);
+        }
+        foreach ($this->userClaims as $name => $value) {
+            $builder = $builder->withClaim($name, $value);
         }
 
         return $builder->getToken($this->jwtConfiguration->signer(), $this->jwtConfiguration->signingKey())->toString();

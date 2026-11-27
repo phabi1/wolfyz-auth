@@ -43,6 +43,7 @@ class AccessTokenEntityTest extends TestCase
         }
         if ($permissions !== null) {
             $token->setPermissions($permissions);
+            $token->setUserClaims(['email' => 'jane@example.com', 'email_verified' => true]);
         }
         $token->setIssuer($issuer);
         $token->setKeyId($issuer === null ? null : 'key-1');
@@ -65,6 +66,8 @@ class AccessTokenEntityTest extends TestCase
         self::assertSame('club', $claims['aud']);
         self::assertSame('token-1', $claims['jti']);
         self::assertSame('key-1', $this->header['kid']);
+        self::assertSame('jane@example.com', $claims['email']);
+        self::assertTrue($claims['email_verified']);
     }
 
     public function testOmitsTheClaimsThatAreNotSet(): void
@@ -74,5 +77,6 @@ class AccessTokenEntityTest extends TestCase
         self::assertArrayNotHasKey('iss', $claims);
         self::assertArrayNotHasKey('permissions', $claims);
         self::assertArrayNotHasKey('kid', $this->header);
+        self::assertArrayNotHasKey('email', $claims);
     }
 }
