@@ -24,17 +24,27 @@ final class RoleSeeder extends AbstractSeed
         'bureau' => [
             'label' => 'Membre du bureau',
             'description' => 'Consultation de la facturation, des adhésions et des événements.',
-            'permissions' => ['billing.view', 'membership.view', 'event.view'],
+            'permissions' => [
+                'billing.view', 'event.view',
+                'membership.campaign.view', 'membership.request.view', 'membership.subscription.view',
+            ],
         ],
         'tresorier' => [
             'label' => 'Trésorier',
             'description' => 'Gestion de la facturation.',
-            'permissions' => ['billing.view', 'billing.edit', 'membership.view'],
+            'permissions' => [
+                'billing.view', 'billing.edit',
+                'membership.campaign.view', 'membership.request.view', 'membership.subscription.view',
+            ],
         ],
         'secretaire' => [
             'label' => 'Secrétaire',
             'description' => 'Gestion des adhésions.',
-            'permissions' => ['membership.view', 'membership.edit', 'event.view'],
+            'permissions' => [
+                'event.view',
+                'membership.campaign.view', 'membership.request.view', 'membership.subscription.view',
+                'membership.campaign.edit', 'membership.request.edit', 'membership.subscription.edit',
+            ],
         ],
         'evenements' => [
             'label' => 'Responsable événements',
