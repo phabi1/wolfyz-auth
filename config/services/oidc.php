@@ -16,7 +16,7 @@ return [
     ],
     'oidc.server.repository.access_token' => [
         'class' => App\Oidc\Server\Repository\AccessTokenRepository::class,
-        'arguments' => ['@entity.manager'],
+        'arguments' => ['@entity.manager', '@user.roles', '!oidc.issuer', '@oidc.jwks', '!oidc.public_key'],
     ],
     'oidc.server.repository.refresh_token' => [
         'class' => App\Oidc\Server\Repository\RefreshTokenRepository::class,

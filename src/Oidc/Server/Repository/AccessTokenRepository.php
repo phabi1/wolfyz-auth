@@ -6,6 +6,8 @@ use App\Core\Entity\EntityManager;
 use App\Core\Entity\EntityRepositoryInterface;
 use App\Oidc\Server\Entity\AccessTokenEntity;
 use App\Oidc\Server\NonceContext;
+use App\Oidc\Jwks;
+use App\User\Role\RoleService;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
@@ -13,8 +15,19 @@ use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
 class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
     private readonly EntityRepositoryInterface $accessTokenEntityRepository;
-    public function __construct(EntityManager $entityManager)
-    {
+
+    /**
+     * @param RoleService|null $roles adds the user's permissions to the token
+     * @param string|null $issuer "iss" claim of the token
+     * @param string|null $publicKeyPath public key of the signing key ("kid" header)
+     */
+    public function __construct(
+        EntityManager $entityManager,
+        private readonly ?RoleService $roles = null,
+        private readonly ?string $issuer = null,
+        private readonly ?Jwks $jwks = null,
+        private readonly ?string $publicKeyPath = null,
+    ) {
         $this->accessTokenEntityRepository = $entityManager->getRepository('oidc-access-token');
     }
 
@@ -27,6 +40,13 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         }
         if ($userIdentifier !== null) {
             $accessToken->setUserIdentifier($userIdentifier);
+            if ($this->roles !== null) {
+                $accessToken->setPermissions($this->roles->userPermissions((string) $userIdentifier));
+            }
+        }
+        $accessToken->setIssuer($this->issuer);
+        if ($this->jwks !== null && $this->publicKeyPath !== null && is_file($this->publicKeyPath)) {
+            $accessToken->setKeyId($this->jwks->keyId($this->publicKeyPath));
         }
         $accessToken->setNonce(NonceContext::get());
 
