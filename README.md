@@ -147,7 +147,9 @@ Permissions are defined in code (`App\User\Role\Permissions`): `users.manage`,
 for memberships one `view`/`edit` pair per resource:
 `membership.campaign.*` (campaigns, their periods, lessons and settings),
 `membership.request.*` (membership requests) and `membership.subscription.*`
-(members and their subscriptions). Roles group permissions and are
+(members and their subscriptions), plus `membership.registration` and
+`event.registration` (registration forms of the website). Roles group
+permissions and are
 managed from the club application; a user receives the permissions of all
 their roles (`auth_role`, `auth_role_permission`, `auth_user_role`). The
 `admin` system role always has every permission, including those added later
@@ -165,6 +167,14 @@ themselves. For that, the access token (JWT) also carries:
 - `iss`: the issuer (`oidc.issuer`);
 - the `kid` header, so that resource servers find the signing key in
   `/.well-known/jwks.json`.
+
+OAuth clients acting on their own behalf (`client_credentials` grant, enabled
+for the clients whose `grant_types` include it) get the permissions of their
+roles (`auth_oauth_client_role`) in their access token, whose subject is the
+client id. The WordPress site uses it to call the club API: the `wordpress`
+client has the `site` role ("Site web"), with the `membership.registration`
+and `event.registration` permissions (public registration forms), and the
+`api` scope (migration `20261127200000_create_client_roles.php`).
 
 To prevent privilege escalation, a user can only:
 

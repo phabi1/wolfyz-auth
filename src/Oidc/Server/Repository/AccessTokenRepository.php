@@ -40,9 +40,12 @@ class AccessTokenRepository implements AccessTokenRepositoryInterface
         }
         if ($userIdentifier !== null) {
             $accessToken->setUserIdentifier($userIdentifier);
-            if ($this->roles !== null) {
-                $accessToken->setPermissions($this->roles->userPermissions((string) $userIdentifier));
-            }
+        }
+        if ($this->roles !== null) {
+            // No user (client_credentials): the client acts on its own behalf.
+            $accessToken->setPermissions($userIdentifier !== null
+                ? $this->roles->userPermissions((string) $userIdentifier)
+                : $this->roles->clientPermissions($clientEntity->getIdentifier()));
         }
         $accessToken->setIssuer($this->issuer);
         if ($this->jwks !== null && $this->publicKeyPath !== null && is_file($this->publicKeyPath)) {

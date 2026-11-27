@@ -14,6 +14,7 @@ use App\Oidc\Server\Repository\UserRepository;
 use League\OAuth2\Server\AuthorizationServer;
 use League\OAuth2\Server\CryptKey;
 use League\OAuth2\Server\Grant\AuthCodeGrant;
+use League\OAuth2\Server\Grant\ClientCredentialsGrant;
 use League\OAuth2\Server\Grant\RefreshTokenGrant;
 use League\OAuth2\Server\RequestEvent;
 use League\OAuth2\Server\ResourceServer;
@@ -76,6 +77,11 @@ class Server implements WatchdogAwareInterface
         $refreshTokenGrant = new RefreshTokenGrant($this->refreshTokenRepository);
         $refreshTokenGrant->setRefreshTokenTTL(new \DateInterval($this->parameters->get('oidc.refresh_token_ttl')));
         $server->enableGrantType($refreshTokenGrant, new \DateInterval($this->parameters->get('oidc.access_token_ttl')));
+
+        // Server-to-server calls (the WordPress site calling the club API):
+        // the token has no user, its permissions come from the client's roles.
+        // Only the clients whose grant_types include it can use it.
+        $server->enableGrantType(new ClientCredentialsGrant(), new \DateInterval($this->parameters->get('oidc.access_token_ttl')));
 
         return $server;
     }

@@ -40,6 +40,7 @@ abstract class UserTestCase extends TestCase
                 is_system INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)',
             'CREATE TABLE auth_role_permission (role_id TEXT, permission TEXT, PRIMARY KEY (role_id, permission))',
             'CREATE TABLE auth_user_role (user_id TEXT, role_id TEXT, PRIMARY KEY (user_id, role_id))',
+            'CREATE TABLE auth_oauth_client_role (client_id TEXT, role_id TEXT, PRIMARY KEY (client_id, role_id))',
             "INSERT INTO auth_role (id, label, is_system) VALUES ('admin', 'Administrator', 1)",
             'CREATE TABLE auth_oauth_access_token (id TEXT PRIMARY KEY, user_id TEXT, revoked INTEGER DEFAULT 0)',
             'CREATE TABLE auth_oauth_refresh_token (id TEXT PRIMARY KEY, access_token_id TEXT, revoked INTEGER DEFAULT 0)',
