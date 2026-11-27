@@ -19,7 +19,16 @@ class Psr7
         $factory = new Psr17Factory();
         $creator = new ServerRequestCreator($factory, $factory, $factory, $factory);
 
-        return $creator->fromGlobals();
+        $request = $creator->fromGlobals();
+
+        // getallheaders() does not see the Authorization header restored from
+        // the rewrite rule under CGI/FastCGI (see public/index.php).
+        $authorization = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+        if (!$request->hasHeader('Authorization') && is_string($authorization) && $authorization !== '') {
+            $request = $request->withHeader('Authorization', $authorization);
+        }
+
+        return $request;
     }
 
     public static function blankResponse(): ResponseInterface
