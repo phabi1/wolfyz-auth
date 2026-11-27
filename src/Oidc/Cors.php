@@ -10,12 +10,24 @@ use App\Core\Routing\RouteMatched;
 
 class Cors
 {
+    /** Allowed methods per controller and action. */
     private const METHODS = [
-        'authorize' => ['GET'],
-        'token' => ['POST'],
-        'userinfo' => ['GET', 'POST'],
-        'introspect' => ['GET'],
-        'jwks' => ['GET'],
+        'oidc.auth' => [
+            'authorize' => ['GET'],
+            'token' => ['POST'],
+            'userinfo' => ['GET', 'POST'],
+            'introspect' => ['GET'],
+            'jwks' => ['GET'],
+        ],
+        'user.api' => [
+            'collection' => ['GET', 'POST'],
+            'item' => ['GET', 'PUT', 'PATCH', 'DELETE'],
+        ],
+        'user.role-api' => [
+            'permissions' => ['GET'],
+            'collection' => ['GET', 'POST'],
+            'item' => ['GET', 'PUT', 'PATCH', 'DELETE'],
+        ],
     ];
     private const HEADERS = ['content-type', 'authorization'];
     private array $origins;
@@ -39,12 +51,12 @@ class Cors
 
     public function supports(?RouteMatched $route): bool
     {
-        return $route !== null && $route->controller === 'oidc.auth' && isset(self::METHODS[$route->action]);
+        return $route !== null && isset(self::METHODS[$route->controller][$route->action]);
     }
 
     public function preflight(Request $request, RouteMatched $route): Response
     {
-        $methods = self::METHODS[$route->action];
+        $methods = self::METHODS[$route->controller][$route->action];
         $origin = $request->header('Origin');
         if ($origin === null) {
             return new Response('', 204, ['Allow' => implode(', ', [...$methods, 'OPTIONS'])]);

@@ -56,6 +56,10 @@ class IdTokenResponse extends BearerTokenResponse
                 $claims['email'] = $user->email;
                 $claims['email_verified'] = $user->emailVerified;
             }
+            if (in_array('roles', $scopes, true) && $user instanceof \App\Oidc\Server\Entity\UserEntity) {
+                $claims['roles'] = $user->roles;
+                $claims['permissions'] = $user->permissions;
+            }
         }
 
         $privateKeyResource = openssl_pkey_get_private(

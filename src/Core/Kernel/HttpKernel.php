@@ -27,6 +27,11 @@ class HttpKernel extends Base
             if (!$routeMatched) {
                 throw new \Exception('Route not found');
             }
+            foreach ($routeMatched->parameters->all() as $name => $value) {
+                if (is_string($name)) {
+                    $request->attributes->set($name, $value);
+                }
+            }
 
             $cors = new Cors($container->get('parameters'));
             $oidcRoute = $cors->supports($routeMatched);

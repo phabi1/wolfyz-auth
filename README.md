@@ -140,6 +140,112 @@ php vendor/bin/phpunit --bootstrap vendor/autoload.php --do-not-cache-result tes
 When updating service definitions in an existing installation, remove the
 generated `cache/services.php` file so the next request rebuilds it.
 
+### Roles and permissions
+
+Permissions are defined in code (`App\User\Role\Permissions`): `users.manage`,
+`roles.manage`, `billing.view`, `billing.edit`, `membership.view`,
+`membership.edit`, `event.view`, `event.edit`. Roles group permissions and are
+managed from the club application; a user receives the permissions of all
+their roles (`auth_role`, `auth_role_permission`, `auth_user_role`). The
+`admin` system role always has every permission, including those added later
+to the catalogue, and can be neither edited nor deleted.
+
+With the `roles` scope (granted to the `club` client), the ID token and
+UserInfo contain the `roles` and `permissions` claims. The ID token is renewed
+with every token refresh, so role changes reach the club within one access
+token lifetime. Clients use these claims to adapt their interface only; the
+APIs check permissions themselves.
+
+To prevent privilege escalation, a user can only:
+
+- grant or revoke roles, and create, edit or delete roles, whose permissions
+  they all have themselves;
+- modify or delete users who have no permission that they lack;
+- not change their own roles nor delete their own account.
+
+These operations return 403 `forbidden` otherwise. To make the first
+administrator:
+
+```sql
+INSERT INTO auth_user_role (user_id, role_id)
+SELECT id, 'admin' FROM auth_user WHERE email = 'admin@example.com';
+```
+
+The catalogue is also stored in the `auth_permission` table, which
+`auth_role_permission` references (foreign key). The code stays the source of
+truth: the `PermissionSeeder` synchronises the table with it, inserting new
+permissions, updating descriptions and deleting the permissions removed from
+the catalogue (which revokes them from every role). The Docker entrypoint runs
+it after the migrations; elsewhere, run it after adding or removing a
+permission, otherwise granting a new permission fails on the foreign key:
+
+```sh
+APP_ENV=development vendor/bin/phinx seed:run -s PermissionSeeder
+```
+
+Default club roles are created by the `RoleSeeder` (it synchronises the
+permissions first). It only creates the missing roles and never modifies an
+existing one; it is not run on start, so that a deleted role does not come
+back:
+
+| Role | Permissions |
+|------|-------------|
+| `bureau` — Membre du bureau | `billing.view`, `membership.view`, `event.view` |
+| `tresorier` — Trésorier | `billing.view`, `billing.edit`, `membership.view` |
+| `secretaire` — Secrétaire | `membership.view`, `membership.edit`, `event.view` |
+| `evenements` — Responsable événements | `event.view`, `event.edit` |
+
+```sh
+APP_ENV=development vendor/bin/phinx seed:run -s RoleSeeder
+```
+
+The `20261126000400_create_roles` migration creates the tables and the `admin`
+role, gives it to the users flagged `is_admin` and drops that column; its
+rollback restores the column from the `admin` role.
+
+### User administration API
+
+Used by the `club` application. Every request needs an access token
+(`Authorization: Bearer …`) carrying the `users` scope, issued to a user with
+the required permission. Otherwise the API returns 401 (`invalid_token`) or 403
+(`insufficient_scope` / `access_denied`).
+
+| Method | Path | Permission | Purpose |
+|--------|------|------------|---------|
+| GET | `/api/users?page=1&size=10&sort=lastname\|asc,firstname&search=jane` | `users.manage` | List: `{items, total, page, size}` (`size` ≤ 100) |
+| POST | `/api/users` | `users.manage` | Create (201) |
+| GET | `/api/users/{id}` | `users.manage` | Read |
+| PUT / PATCH | `/api/users/{id}` | `users.manage` | Partial update: only the fields sent are changed |
+| DELETE | `/api/users/{id}` | `users.manage` | Delete (204) and revoke the user's tokens and codes |
+| GET | `/api/permissions` | `roles.manage` or `users.manage` | Catalogue of permissions |
+| GET | `/api/roles` | `roles.manage` or `users.manage` | Every role with its permissions and `user_count` |
+| POST | `/api/roles` | `roles.manage` | Create (201); the identifier is derived from `label` unless `id` is given |
+| GET | `/api/roles/{id}` | `roles.manage` or `users.manage` | Read |
+| PUT / PATCH | `/api/roles/{id}` | `roles.manage` | Partial update (`label`, `description`, `permissions`) |
+| DELETE | `/api/roles/{id}` | `roles.manage` | Delete (204); its users lose it |
+
+User fields (JSON): `email`, `firstname`, `lastname`, `name` (defaults to
+"firstname lastname"), `password` (8–72 bytes), `email_verified`, `roles`
+(list of role identifiers; responses contain `[{id, label}]`). On creation,
+`email`, `firstname` and `lastname` are required. Without a `password`, the
+account gets a random password and the user sets one through "forgot
+password". Responses never contain the password hash; `created_at` is a Unix
+timestamp. `search` matches email, name, firstname and lastname. Sort fields:
+`email`, `name`, `firstname`, `lastname`, `created_at`, `email_verified`.
+
+Errors: 404 `not_found`; 422 `validation_failed` with an `errors` object
+(field → message); 403 `forbidden` (see the escalation rules above); 405 for
+other methods.
+
+Users must sign in again to the club app to get tokens with the `users` and
+`roles` scopes. CORS uses the same `OIDC_CORS_ALLOWED_ORIGINS` list as the
+OIDC routes. Remove `cache/services.php` and `cache/entities.php` on existing
+installations.
+
+```sh
+php vendor/bin/phpunit --bootstrap vendor/autoload.php --do-not-cache-result tests/User
+```
+
 ## Local setup
 
 Inside Docker, `docker-entrypoint.sh` runs `composer install`, waits for MySQL

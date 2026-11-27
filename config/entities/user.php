@@ -14,6 +14,7 @@ return [
             'email_verified' => ['type' => Field::TYPE_BOOLEAN],
             'firstname' => ['type' => Field::TYPE_STRING],
             'lastname' => ['type' => Field::TYPE_STRING],
+            'created_at' => ['type' => Field::TYPE_DATETIME],
         ],
     ],
     'user-token' => [

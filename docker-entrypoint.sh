@@ -15,6 +15,8 @@ if [ -n "$DB_HOST" ]; then
         sleep 1
     done
     /app/vendor/bin/phinx migrate --configuration /app/phinx.php
+    # Synchronise auth_permission with the catalogue defined in code.
+    /app/vendor/bin/phinx seed:run --configuration /app/phinx.php -s PermissionSeeder
 fi
 
 # Generate the RSA keypair used to sign ID tokens / access tokens on first boot.
