@@ -29,30 +29,36 @@ class ClientRepository implements ClientRepositoryInterface
             return null;
         }
 
-        $isConfidential = true;
-        if (in_array('authorization_code', $row->grant_types)) {
-            $isConfidential = false;
-        }
-    
-        return new ClientEntity($row->client_id, $row->client_id, $row->redirect_uris, $isConfidential);
+        // A client with a secret is confidential: it must authenticate on the token
+        // endpoint. A client without one is public (SPA, mobile) and relies on PKCE.
+        $isConfidential = !empty($row->client_secret);
+
+        return new ClientEntity(
+            $row->client_id,
+            $row->client_id,
+            $row->redirect_uris,
+            $isConfidential,
+            $row->grant_types,
+        );
     }
 
+    /**
+     * Only called by league/oauth2-server for confidential clients.
+     * client_secret is stored as a password_hash() hash.
+     */
     public function validateClient(string $clientIdentifier, ?string $clientSecret, ?string $grantType): bool
     {
         $row = $this->clientEntityRepository->findByClientId($clientIdentifier);
 
-        if (!$row) {
+        if (!$row || empty($row->client_secret)) {
             return false;
         }
 
-        if (!in_array($grantType, $row->grant_types)) {
+        if ($grantType !== null && !in_array($grantType, $row->grant_types, true)) {
             return false;
         }
 
-        if ($grantType === 'authorization_code') {
-            return true;
-        }
-
-        return $clientSecret !== null && password_verify($clientSecret, $row->client_secret);
+        return $clientSecret !== null && $clientSecret !== ''
+            && password_verify($clientSecret, $row->client_secret);
     }
 }

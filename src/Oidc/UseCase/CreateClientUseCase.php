@@ -25,7 +25,10 @@ class CreateClientUseCase implements UseCaseInterface
 
         $data = [
             'client_id' => $client_id,
-            'client_secret' => $client_secret,
+            // Never store the secret in clear: ClientRepository::validateClient() uses password_verify().
+            'client_secret' => ($client_secret !== null && $client_secret !== '')
+                ? password_hash($client_secret, PASSWORD_DEFAULT)
+                : null,
             'redirect_uris' => $redirect_uris,
             'grant_types' => $grant_types,
             'response_types' => $response_types,
