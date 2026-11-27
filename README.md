@@ -157,9 +157,14 @@ With the `roles` scope (granted to the `club` client), the ID token and
 UserInfo contain the `roles` and `permissions` claims. The ID token is renewed
 with every token refresh, so role changes reach the club within one access
 token lifetime. Clients use these claims to adapt their interface only.
-Hiding a control is not a protection: the APIs must check the permissions
-themselves (the club API does not do it yet: it only checks a shared API
-key).
+Hiding a control is not a protection: the APIs check the permissions
+themselves. For that, the access token (JWT) also carries:
+
+- `permissions`: the permissions of the user's roles when the token was
+  issued (renewed with every token refresh);
+- `iss`: the issuer (`oidc.issuer`);
+- the `kid` header, so that resource servers find the signing key in
+  `/.well-known/jwks.json`.
 
 To prevent privilege escalation, a user can only:
 
