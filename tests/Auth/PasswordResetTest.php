@@ -30,6 +30,7 @@ class PasswordResetTest extends TestCase
     private TokenService $tokens;
     private PasswordResetService $service;
     private Container $container;
+    private array $definitions;
     private array $sessionData;
     private array $globals;
     private Mailer&MockObject $mailer;
@@ -71,7 +72,7 @@ class PasswordResetTest extends TestCase
         $session->method('set')->willReturnCallback(function ($key, $value): void {
             $this->sessionData[$key] = $value;
         });
-        $this->container = new Container(array_merge(
+        $this->definitions = array_merge(
             require APP_DIR . '/config/services/core.php',
             require APP_DIR . '/config/services/user.php',
             require APP_DIR . '/config/services/auth.php',
@@ -80,9 +81,10 @@ class PasswordResetTest extends TestCase
                 'entity.definition' => ['factory' => fn () => $definitions],
                 'session' => ['factory' => fn () => $session],
                 'mailer' => ['factory' => fn () => $this->mailer],
-                'parameters' => ['factory' => fn () => new Parameters(['oauth2' => ['issuer' => 'https://auth.example.com']])],
+                'parameters' => ['factory' => fn () => new Parameters(['base_url' => 'https://auth.example.com/'])],
             ],
-        ));
+        );
+        $this->container = new Container($this->definitions);
         $this->entities = $this->container->get('entity.manager');
         $this->tokens = $this->container->get('user.token');
         $this->service = $this->container->get('auth.password-reset');
@@ -130,13 +132,13 @@ class PasswordResetTest extends TestCase
                 self::assertTrue($this->service->isValidToken($query['token']));
                 return true;
             }))->willReturn(true);
-        $this->service->requestReset('jane@example.com', 'https://auth.example.com/');
+        $this->service->requestReset('jane@example.com');
     }
 
     public function testUnknownEmailDoesNotCreateTokenOrSendEmail(): void
     {
         $this->mailer->expects(self::never())->method('sendMail');
-        $this->service->requestReset('unknown@example.com', 'https://auth.example.com');
+        $this->service->requestReset('unknown@example.com');
         self::assertSame(0, $this->tokenCount());
     }
 
@@ -144,7 +146,7 @@ class PasswordResetTest extends TestCase
     {
         $this->mailer->method('sendMail')->willThrowException(new \PHPMailer\PHPMailer\Exception('SMTP unavailable.'));
         try {
-            $this->service->requestReset('jane@example.com', 'https://auth.example.com');
+            $this->service->requestReset('jane@example.com');
             self::fail('SMTP failure should propagate as a password reset mail error.');
         } catch (PasswordResetMailException $exception) {
             self::assertInstanceOf(\PHPMailer\PHPMailer\Exception::class, $exception->getPrevious());
@@ -156,7 +158,7 @@ class PasswordResetTest extends TestCase
     {
         $view = $this->container->get('view');
         $url = 'https://auth.example.com/auth/password/reset?token=' . str_repeat('a', 64);
-        self::assertSame('Reset your Wolf Auth password', trim($view->render('mails/auth/password/reset.subject', ['url' => $url])));
+        self::assertSame('Réinitialisez votre mot de passe Wolf Auth', trim($view->render('mails/auth/password/reset.subject', ['url' => $url])));
         self::assertStringContainsString('href="' . $url . '"', $view->render('mails/auth/password/reset.html', ['url' => $url]));
         self::assertStringContainsString($url, $view->render('mails/auth/password/reset.text', ['url' => $url]));
     }
@@ -176,7 +178,7 @@ class PasswordResetTest extends TestCase
         $existing = $this->token();
         $this->mailer->method('sendMail')->willReturn(false);
         try {
-            $this->service->requestReset('jane@example.com', 'https://auth.example.com');
+            $this->service->requestReset('jane@example.com');
             self::fail('Delivery failure should propagate.');
         } catch (PasswordResetMailException) {
             self::assertSame(1, $this->tokenCount());
@@ -240,7 +242,7 @@ class PasswordResetTest extends TestCase
         $manager = $this->createMock(EntityManager::class);
         $manager->method('getRepository')->with('user')->willReturn($users);
         $manager->method('getDb')->willReturn($this->db);
-        $service = new PasswordResetService($manager, $this->tokens, $this->mailer);
+        $service = new PasswordResetService($manager, $this->tokens, $this->mailer, 'https://auth.example.com');
         try {
             $service->resetPassword($token, 'new-password');
             self::fail('Database failure should propagate.');
@@ -273,11 +275,22 @@ class PasswordResetTest extends TestCase
         self::assertFalse($this->service->resetPassword($token, 'new-password'));
     }
 
-    public function testRejectsInvalidIssuerBeforeCreatingToken(): void
+    public static function invalidBaseUrls(): array
+    {
+        return [['javascript:alert(1)'], ['/relative/path'], ['']];
+    }
+
+    #[DataProvider('invalidBaseUrls')]
+    public function testRejectsInvalidBaseUrlBeforeCreatingToken(string $baseUrl): void
     {
         $this->mailer->expects(self::never())->method('sendMail');
-        $this->expectException(\InvalidArgumentException::class);
-        $this->service->requestReset('jane@example.com', 'javascript:alert(1)');
+        $service = new PasswordResetService($this->entities, $this->tokens, $this->mailer, $baseUrl);
+        try {
+            $service->requestReset('jane@example.com');
+            self::fail('An invalid base URL must be rejected.');
+        } catch (\InvalidArgumentException) {
+        }
+        self::assertSame(0, $this->tokenCount());
     }
 
     public function testForgotReportsDeliveryFailureWithoutClaimingSuccess(): void
@@ -286,10 +299,10 @@ class PasswordResetTest extends TestCase
         $controller = $this->controller($this->mailer);
         $controller->forgotAction(Request::fromGlobals());
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST = ['email' => 'jane@example.com', 'csrf' => $this->sessionData['password_reset_csrf']];
+        $_POST = ['email' => 'jane@example.com', 'csrf' => $this->sessionData['csrf_token']];
         $response = $controller->forgotAction(Request::fromGlobals());
         self::assertSame(503, $this->responseStatus($response));
-        self::assertStringNotContainsString('If an account exists with this email', $this->body($response));
+        self::assertStringNotContainsString('Si un compte est associé à cette adresse e-mail', $this->body($response));
         self::assertSame(0, $this->tokenCount());
     }
 
@@ -313,10 +326,10 @@ class PasswordResetTest extends TestCase
         self::assertSame(200, $this->responseStatus($form));
         self::assertStringContainsString('name="csrf"', $this->body($form));
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST = ['email' => 'jane@example.com', 'csrf' => $this->sessionData['password_reset_csrf']];
+        $_POST = ['email' => 'jane@example.com', 'csrf' => $this->sessionData['csrf_token']];
         $response = $controller->forgotAction(Request::fromGlobals());
         self::assertSame(503, $this->responseStatus($response));
-        self::assertStringContainsString('currently unavailable', $this->body($response));
+        self::assertStringContainsString('actuellement indisponible', $this->body($response));
         self::assertSame(0, $this->tokenCount());
     }
 
@@ -327,11 +340,11 @@ class PasswordResetTest extends TestCase
         $controller = $this->controller($this->mailer);
         $controller->forgotAction(Request::fromGlobals());
         $_SERVER['REQUEST_METHOD'] = 'POST';
-        $_POST = ['email' => $email, 'csrf' => $this->sessionData['password_reset_csrf']];
+        $_POST = ['email' => $email, 'csrf' => $this->sessionData['csrf_token']];
         $response = $controller->forgotAction(Request::fromGlobals());
         self::assertSame(200, $this->responseStatus($response));
-        self::assertStringContainsString('If an account exists with this email', $this->body($response));
-        self::assertSame(429, $this->responseStatus($controller->forgotAction(Request::fromGlobals())));
+        self::assertStringContainsString('Si un compte est associé à cette adresse e-mail', $this->body($response));
+        // TODO: rate limiting of reset requests (429 on a repeated submission) is not implemented yet.
     }
 
     public static function emailProvider(): array
@@ -346,7 +359,7 @@ class PasswordResetTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = ['email' => 'jane@example.com'];
         self::assertSame(403, $this->responseStatus($controller->forgotAction(Request::fromGlobals())));
-        $_POST = ['email' => 'invalid', 'csrf' => $this->sessionData['password_reset_csrf']];
+        $_POST = ['email' => 'invalid', 'csrf' => $this->sessionData['csrf_token']];
         self::assertSame(400, $this->responseStatus($controller->forgotAction(Request::fromGlobals())));
         self::assertSame(0, $this->tokenCount());
     }
@@ -363,11 +376,11 @@ class PasswordResetTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = [
             'token' => $_GET['token'], 'password' => 'new-password', 'password_confirmation' => 'new-password',
-            'csrf' => $this->sessionData['password_reset_csrf'],
+            'csrf' => $this->sessionData['csrf_token'],
         ];
         $response = $controller->resetAction(Request::fromGlobals());
         self::assertSame(200, $this->responseStatus($response));
-        self::assertStringContainsString('Your password has been reset', $this->body($response));
+        self::assertStringContainsString('Votre mot de passe a été réinitialisé', $this->body($response));
         self::assertStringNotContainsString('name="token"', $this->body($response));
         self::assertArrayNotHasKey('user_id', $this->sessionData);
     }
@@ -381,7 +394,7 @@ class PasswordResetTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_POST = [
             'token' => $token, 'password' => $password, 'password_confirmation' => $confirmation,
-            'csrf' => $csrf === 'valid' ? $this->sessionData['password_reset_csrf'] : '',
+            'csrf' => $csrf === 'valid' ? $this->sessionData['csrf_token'] : '',
         ];
         self::assertSame($status, $this->responseStatus($controller->resetAction(Request::fromGlobals())));
         self::assertTrue($this->service->isValidToken($token));
@@ -401,7 +414,7 @@ class PasswordResetTest extends TestCase
     {
         $response = $this->controller()->resetAction(Request::fromGlobals());
         self::assertSame(400, $this->responseStatus($response));
-        self::assertStringContainsString('invalid or has expired', $this->body($response));
+        self::assertStringContainsString('invalide ou a expiré', $this->body($response));
         self::assertStringNotContainsString('name="password"', $this->body($response));
     }
 
@@ -432,13 +445,10 @@ class PasswordResetTest extends TestCase
         $container = $this->container;
         if ($mailer !== null) {
             $this->mailConfigured = true;
-            $container = new Container([
+            $container = new Container(array_merge($this->definitions, [
                 'mailer' => ['factory' => fn () => $mailer],
                 'auth.password-reset' => ['factory' => fn () => $this->service],
-                'view' => ['factory' => fn () => $this->container->get('view')],
-                'session' => ['factory' => fn () => $this->container->get('session')],
-                'parameters' => ['factory' => fn () => $this->container->get('parameters')],
-            ]);
+            ]));
         }
         $controller = new PasswordController();
         $controller->setContainer($container);

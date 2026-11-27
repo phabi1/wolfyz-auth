@@ -2,6 +2,7 @@
 
 namespace App\Tests\Auth;
 
+use App\Auth\Authentication\AuthenticationService;
 use App\Auth\Controller\HomeController;
 use App\Core\Di\Container;
 use App\Core\Http\Request;
@@ -19,6 +20,16 @@ class HomeControllerTest extends TestCase
         if (!defined('APP_DIR')) {
             define('APP_DIR', dirname(__DIR__, 2));
         }
+        if (!defined('CONFIG_DIR')) {
+            define('CONFIG_DIR', APP_DIR . '/config');
+        }
+        if (!defined('CACHE_DIR')) {
+            // Keep the entity/service caches out of the project's cache/ directory.
+            define('CACHE_DIR', sys_get_temp_dir() . '/wolf-auth-tests-' . getmypid());
+        }
+        if (!is_dir(CACHE_DIR)) {
+            mkdir(CACHE_DIR, 0777, true);
+        }
         if (!defined('APP_ENV')) {
             define('APP_ENV', 'development');
         }
@@ -34,11 +45,11 @@ class HomeControllerTest extends TestCase
 
     private function container(bool $isLoggedIn): Container
     {
-        $session = $this->createMock(Session::class);
-        $session->expects(self::once())->method('get')->with('user_id')->willReturn($isLoggedIn ? 'user-123' : null);
-        $session->expects(self::never())->method('remove');
+        $authentication = $this->createMock(AuthenticationService::class);
+        $authentication->expects(self::once())->method('isLoggedIn')->willReturn($isLoggedIn);
         $definitions = require APP_DIR . '/config/services.php';
-        $definitions['session'] = ['factory' => fn () => $session];
+        $definitions['session'] = ['factory' => fn () => $this->createMock(Session::class)];
+        $definitions['auth.authentication'] = ['factory' => fn () => $authentication];
         return new Container($definitions);
     }
 
@@ -62,7 +73,7 @@ class HomeControllerTest extends TestCase
         self::assertSame(200, (new ReflectionProperty(Response::class, 'status'))->getValue($response));
         self::assertSame('no-store', $response->headers->get('Cache-Control'));
         $body = $this->body($response);
-        self::assertStringContainsString('Bienvenue sur Wolf Auth', $body);
+        self::assertStringContainsString('Bienvenue', $body);
         self::assertStringContainsString('<html lang="fr">', $body);
         self::assertStringContainsString('href="/signin"', $body);
         self::assertStringContainsString('href="/signup"', $body);

@@ -34,6 +34,10 @@ class PasswordResetService
         if (empty($this->baseUrl)) {
             throw new \InvalidArgumentException('Base URL is required for password reset.');
         }
+        $scheme = strtolower((string) parse_url($this->baseUrl, PHP_URL_SCHEME));
+        if (!in_array($scheme, ['http', 'https'], true) || !parse_url($this->baseUrl, PHP_URL_HOST)) {
+            throw new \InvalidArgumentException('Base URL for password reset must be an absolute http(s) URL.');
+        }
 
         $user = $this->userRepository->findByEmail($email);
         if (!$user) {
