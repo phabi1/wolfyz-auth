@@ -51,6 +51,10 @@ return [
         'class' => App\Oidc\Userinfo::class,
         'arguments' => ['@oidc.server', '@oidc.server.repository.user'],
     ],
+    'oidc.post-logout-redirect' => [
+        'class' => App\Oidc\PostLogoutRedirect::class,
+        'arguments' => ['@oidc.server.repository.client'],
+    ],
     'oidc.jwks' => [
         'class' => App\Oidc\Jwks::class,
     ],

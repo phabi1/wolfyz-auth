@@ -18,6 +18,7 @@ class Introspection
             'authorization_endpoint' => $this->issuer . '/oidc/authorize',
             'token_endpoint' => $this->issuer . '/oidc/token',
             'userinfo_endpoint' => $this->issuer . '/oidc/userinfo',
+            'end_session_endpoint' => $this->issuer . '/signout',
             'grant_types_supported' => $this->getGrantTypesSupported(),
         ];
     }
