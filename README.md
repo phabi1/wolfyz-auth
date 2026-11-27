@@ -143,8 +143,11 @@ generated `cache/services.php` file so the next request rebuilds it.
 ### Roles and permissions
 
 Permissions are defined in code (`App\User\Role\Permissions`): `users.manage`,
-`roles.manage`, `billing.view`, `billing.edit`, `membership.view`,
-`membership.edit`, `event.view`, `event.edit`. Roles group permissions and are
+`roles.manage`, `billing.view`, `billing.edit`, `event.view`, `event.edit`, and
+for memberships one `view`/`edit` pair per resource:
+`membership.campaign.*` (campaigns, their periods, lessons and settings),
+`membership.request.*` (membership requests) and `membership.subscription.*`
+(members and their subscriptions). Roles group permissions and are
 managed from the club application; a user receives the permissions of all
 their roles (`auth_role`, `auth_role_permission`, `auth_user_role`). The
 `admin` system role always has every permission, including those added later
@@ -153,8 +156,10 @@ to the catalogue, and can be neither edited nor deleted.
 With the `roles` scope (granted to the `club` client), the ID token and
 UserInfo contain the `roles` and `permissions` claims. The ID token is renewed
 with every token refresh, so role changes reach the club within one access
-token lifetime. Clients use these claims to adapt their interface only; the
-APIs check permissions themselves.
+token lifetime. Clients use these claims to adapt their interface only.
+Hiding a control is not a protection: the APIs must check the permissions
+themselves (the club API does not do it yet: it only checks a shared API
+key).
 
 To prevent privilege escalation, a user can only:
 
@@ -183,6 +188,11 @@ permission, otherwise granting a new permission fails on the foreign key:
 APP_ENV=development vendor/bin/phinx seed:run -s PermissionSeeder
 ```
 
+The production deployment (`bin/deploy.sh`) runs the migrations but not the
+seeder. Renaming or splitting a permission must therefore be done by a
+migration that also moves the existing grants, otherwise the roles lose them
+(see `20261127100000_split_membership_permissions.php`).
+
 Default club roles are created by the `RoleSeeder` (it synchronises the
 permissions first). It only creates the missing roles and never modifies an
 existing one; it is not run on start, so that a deleted role does not come
@@ -190,9 +200,9 @@ back:
 
 | Role | Permissions |
 |------|-------------|
-| `bureau` — Membre du bureau | `billing.view`, `membership.view`, `event.view` |
-| `tresorier` — Trésorier | `billing.view`, `billing.edit`, `membership.view` |
-| `secretaire` — Secrétaire | `membership.view`, `membership.edit`, `event.view` |
+| `bureau` — Membre du bureau | `billing.view`, `event.view`, `membership.*.view` |
+| `tresorier` — Trésorier | `billing.view`, `billing.edit`, `membership.*.view` |
+| `secretaire` — Secrétaire | `event.view`, `membership.*.view`, `membership.*.edit` |
 | `evenements` — Responsable événements | `event.view`, `event.edit` |
 
 ```sh
