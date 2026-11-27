@@ -95,9 +95,20 @@ class SignController extends AbstractController
     {
         $this->getService('auth.authentication')->logout();
 
-        $redirect = $request->query->get('post_logout_redirect_uri') ?? '/signin';
+        $query = $request->query;
+        $redirect = $this->getService('oidc.post-logout-redirect')->resolve(
+            $this->stringParam($query->get('post_logout_redirect_uri')),
+            $this->stringParam($query->get('client_id')),
+            $this->stringParam($query->get('id_token_hint')),
+            $this->stringParam($query->get('state')),
+        );
 
-        return new RedirectResponse($redirect);
+        return new RedirectResponse($redirect ?? '/signin');
+    }
+
+    private function stringParam(mixed $value): ?string
+    {
+        return is_string($value) ? $value : null;
     }
 
     private function checkIsAlreadyLoggedIn(): bool
