@@ -11,8 +11,12 @@ use Phinx\Migration\IrreversibleMigrationException;
  * Every statement is idempotent (CREATE TABLE IF NOT EXISTS / INSERT IGNORE),
  * so this migration is safe to run on installations that already have tables.
  * The default scopes and client are only inserted into tables created here:
- * existing installations may have a different structure (e.g. scopes keyed
- * by "name") and keep their own data.
+ * existing installations keep their own data.
+ *
+ * auth_oauth_client and auth_oauth_scope match the columns used by the code
+ * (config/entities/oidc.php): clients are looked up by "client_id" and scopes
+ * by "name". Installations created by an earlier version of this migration
+ * got "id" columns instead; the later migrations accept both layouts.
  */
 final class InitialSchema extends AbstractMigration
 {
@@ -48,11 +52,11 @@ final class InitialSchema extends AbstractMigration
 
         $this->execute(<<<'SQL'
             CREATE TABLE IF NOT EXISTS auth_oauth_client (
-                id VARCHAR(80) NOT NULL PRIMARY KEY,
-                secret VARCHAR(255) NULL,
-                name VARCHAR(190) NOT NULL,
+                id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                client_id VARCHAR(80) NOT NULL UNIQUE,
+                client_secret VARCHAR(255) NULL,
                 redirect_uris TEXT NOT NULL,
-                is_confidential TINYINT(1) NOT NULL DEFAULT 0,
+                grant_types TEXT NOT NULL,
                 scopes VARCHAR(255) NOT NULL DEFAULT 'openid profile email',
                 created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
@@ -60,7 +64,7 @@ final class InitialSchema extends AbstractMigration
 
         $this->execute(<<<'SQL'
             CREATE TABLE IF NOT EXISTS auth_oauth_scope (
-                id VARCHAR(80) NOT NULL PRIMARY KEY,
+                name VARCHAR(80) NOT NULL PRIMARY KEY,
                 description VARCHAR(255) NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             SQL);
@@ -100,7 +104,7 @@ final class InitialSchema extends AbstractMigration
 
         if ($seedScopes) {
             $this->execute(<<<'SQL'
-                INSERT IGNORE INTO auth_oauth_scope (id, description) VALUES
+                INSERT IGNORE INTO auth_oauth_scope (name, description) VALUES
                     ('openid', 'OpenID Connect'),
                     ('profile', 'Basic profile information'),
                     ('email', 'Email address'),
@@ -110,9 +114,10 @@ final class InitialSchema extends AbstractMigration
 
         if ($seedClients) {
             $this->execute(<<<'SQL'
-                -- Matches club/public/config.json ("clientId": "club", "redirectUri": "http://localhost:4200")
-                INSERT IGNORE INTO auth_oauth_client (id, secret, name, redirect_uris, is_confidential, scopes) VALUES
-                    ('club', NULL, 'Club', 'http://localhost:4200', 0, 'openid profile email api')
+                -- Matches club/public/config.json ("clientId": "club", "redirectUri": "http://localhost:4200").
+                -- Public client (no secret): code flow with PKCE, renewed with refresh tokens.
+                INSERT IGNORE INTO auth_oauth_client (client_id, client_secret, redirect_uris, grant_types, scopes) VALUES
+                    ('club', NULL, 'http://localhost:4200', 'authorization_code,refresh_token', 'openid profile email api')
                 SQL);
         }
     }
